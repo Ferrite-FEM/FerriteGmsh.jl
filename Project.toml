@@ -1,0 +1,8 @@
+name = "JuAFEMGmsh"
+uuid = "4f95f4f8-b27c-4ae5-9a39-ea55e634e36b"
+authors = ["Maximilian Köhler <maximilian.koehler@ruhr-uni-bochum.de>"]
+version = "0.1.0"
+
+[deps]
+JuAFEM = "30d91d44-8115-11e8-1d28-c19a5ac16de8"
+gmsh = "a3f5b5a8-4c56-11eb-214e-350f4127dda5"
