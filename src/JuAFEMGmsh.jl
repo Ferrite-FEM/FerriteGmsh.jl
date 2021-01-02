@@ -23,21 +23,29 @@ end
 function getelements(dim)
     elementtypes, elementtags, nodetags = JuAFEMGmsh.gmsh.model.mesh.getElements(dim)
     @assert length(elementtypes)==1 "only one element type per mesh is supported"
-    elementname, dim, order, numnodes, localnodecoord, numprimarynodes = JuAFEMGmsh.gmsh.model.mesh.getElementProperties(2) 
-    nodetags = convert(Array{Array{Int64,1},1}, nodetags)
+    elementname, dim, order, numnodes, localnodecoord, numprimarynodes = JuAFEMGmsh.gmsh.model.mesh.getElementProperties(elementtypes[1]) 
+    nodetags = convert(Array{Array{Int64,1},1}, nodetags)[1]
     juafemcell = gmshtojuafemcell[elementname]
-    elements = [juafemcell(Tuple(nodetags[1][i:i+(numnodes-1)])) for i in 1:numnodes:length(nodetags[1])]
+    elements = [juafemcell(Tuple(nodetags[i:i+(numnodes-1)])) for i in 1:numnodes:length(nodetags)]
     return elements
 end
 
 function getboundary(dim)
+    boundarydict = Dict{String, Vector}()
     boundaries = gmsh.model.getPhysicalGroups(dim) 
-    for boundary in boundaries
-        name = gmsh.model.getPhysicalName(dim, boundary[2])    
-    end    
+    for (tag,boundary) in enumerate(boundaries)
+        physicaltag = boundary[2]
+        name = gmsh.model.getPhysicalName(dim, physicaltag)
+        boundarytypes, boundarytags, boundarynodetags = gmsh.model.mesh.getElements(dim, tag)
+        elementname, dim, order, numnodes, localnodecoord, numprimarynodes = JuAFEMGmsh.gmsh.model.mesh.getElementProperties(boundarytypes[1]) 
+        boundarynodetags = convert(Array{Array{Int64,1},1}, boundarynodetags)[1]
+        boundaryconnectivity = [Tuple(boundarynodetags[i:i+(numnodes-1)]) for i in 1:numnodes:length(boundarynodetags)]
+        boundarydict[name] = boundaryconnectivity
+    end 
+    return boundarydict
 end
 
 export gmsh
-export getnodes, getelements
+export getnodes, getelements, getboundary
 
 end
