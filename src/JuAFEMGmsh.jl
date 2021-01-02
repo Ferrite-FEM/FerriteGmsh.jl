@@ -3,7 +3,16 @@ module JuAFEMGmsh
 using gmsh
 using JuAFEM
 
-const gmshtojuafemcell = Dict("Triangle 3" => Triangle)
+const gmshtojuafemcell = Dict("Line 2" => Line,
+                              "Line 3" => QuadraticLine,
+                              "Triangle 3" => Triangle,
+                              "Triangle 6" => QuadraticTriangle,
+                              "Quadrilateral 4" => Quadrilateral,
+                              "Quadrilateral 9" => QuadraticQuadrilateral,
+                              "Tetrahedron 4" => Tetrahedron,
+                              "Tetrahedron 10" => QuadraticTetrahedron,
+                              "Hexahedron 8" => Hexahedron,
+                              "Hexahedron 20" => QuadraticHexahedron)
 
 function getnodes()
     nodeid, nodes = JuAFEMGmsh.gmsh.model.mesh.getNodes()
