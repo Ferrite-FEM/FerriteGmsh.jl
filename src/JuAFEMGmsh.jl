@@ -30,4 +30,14 @@ function getelements(dim)
     return elements
 end
 
+function getboundary(dim)
+    boundaries = gmsh.model.getPhysicalGroups(dim) 
+    for boundary in boundaries
+        name = gmsh.model.getPhysicalName(dim, boundary[2])    
+    end    
+end
+
+export gmsh
+export getnodes, getelements
+
 end
