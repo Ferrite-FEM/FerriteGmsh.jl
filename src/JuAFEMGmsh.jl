@@ -100,15 +100,16 @@ function saved_file_to_grid(filename::String; domain="")
 
     nodes = tonodes()
     elements, gmsh_elementidx = toelements(dim) 
-    boundarydict = toboundary(facedim)
-    facesets = tofacesets(boundarydict, elements)
     cellsets = tocellsets(dim, gmsh_elementidx)
-    gmsh.finalize()
 
     if !isempty(domain)
         domaincellset = cellsets[domain]
         elements = elements[collect(domaincellset)]
     end
+
+    boundarydict = toboundary(facedim)
+    facesets = tofacesets(boundarydict, elements)
+    gmsh.finalize()
         
     return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 end
