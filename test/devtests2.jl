@@ -1,5 +1,5 @@
-using JuAFEMGmsh
-using JuAFEM
+using FerriteGmsh
+using Ferrite
 
 gmsh.initialize()
 
@@ -122,10 +122,10 @@ gmsh.model.geo.synchronize()
 gmsh.model.addPhysicalGroup(3, [186], 10);
 gmsh.model.mesh.generate(3)
 
-nodes = getnodes()
-elements, gmsh_eleidx = getelements(3)
-boundarydict = getboundary(2)
-faceset = JuAFEMGmsh.getfaceset(boundarydict, elements)
-cellset = JuAFEMGmsh.getcellsets(3,gmsh_eleidx)
+nodes = tonodes()
+elements, gmsh_eleidx = toelements(3)
+boundarydict = toboundary(2)
+faceset = tofacesets(boundarydict, elements)
+cellset = tocellsets(3,gmsh_eleidx)
 grid = Grid(elements,nodes,facesets=faceset,cellsets=cellset)
 

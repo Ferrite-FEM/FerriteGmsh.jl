@@ -1,5 +1,5 @@
-using JuAFEMGmsh
-using JuAFEM, SparseArrays
+using FerriteGmsh
+using Ferrite, SparseArrays
 
 gmsh.initialize()
 gmsh.option.setNumber("General.Terminal", 1)
@@ -24,7 +24,7 @@ gmsh.model.mesh.generate(2)
 nodes = tonodes()
 elements, gmsh_eleidx = toelements(2)
 boundarydict = toboundary(1)
-faceset = tofaceset(boundarydict, elements)
+faceset = tofacesets(boundarydict, elements)
 
 grid = Grid(elements,nodes,facesets=faceset)
 
@@ -41,7 +41,7 @@ K = create_sparsity_pattern(dh);
 
 ch = ConstraintHandler(dh);
 
-∂Ω = union(JuAFEM.getfaceset.((grid, ), ["My Boundary"])...);
+∂Ω = union(Ferrite.getfaceset.((grid, ), ["My Boundary"])...);
 
 dbc = Dirichlet(:u, ∂Ω, (x, t) -> 0)
 add!(ch, dbc);

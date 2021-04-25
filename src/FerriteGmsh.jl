@@ -1,7 +1,7 @@
-module JuAFEMGmsh
+module FerriteGmsh
 
 using gmsh
-using JuAFEM
+using Ferrite
 
 const gmshtojuafemcell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
@@ -49,8 +49,8 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:JuAFEM.AbstractCell})
-    faces = JuAFEM.faces.(elements)
+function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
+    faces = Ferrite.faces.(elements)
     facesets = Dict{String,Set{Tuple{Int,Int}}}()
     for (boundaryname, boundaryfaces) in boundarydict
         facesettuple = Set{Tuple{Int,Int}}()
