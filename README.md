@@ -1,4 +1,4 @@
-# Ferrite.jl
+# FerriteGmsh.jl
 
 <!---
 [![][docs-dev-img]][docs-dev-url]
