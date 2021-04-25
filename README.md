@@ -1,4 +1,4 @@
-# JuAFEMGmsh.jl
+# Ferrite.jl
 
 <!---
 [![][docs-dev-img]][docs-dev-url]
@@ -8,12 +8,12 @@
 [docs-dev-url]: http://koehlerson.github.io/gmsh.jl/dev/
 -->
 
-JuAFEMGmsh tries to simplify the conversion from a gmsh mesh to a JuAFEM mesh.
+FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
 
 ## Installation
 
 ```
-]add https://github.com/koehlerson/JuAFEMGmsh.jl.git
+]add https://github.com/koehlerson/FerriteGmsh.jl.git
 ```
 
 ## Example
@@ -28,7 +28,7 @@ This package offers two workflows. The user can either load an already meshed fi
 The first approach can be achieved by
 
 ```julia
-using JuAFEMGmsh
+using FerriteGmsh
 
 saved_file_to_grid("t5.msh",domain="10")
 ```
@@ -36,7 +36,7 @@ saved_file_to_grid("t5.msh",domain="10")
 while the latter is done by
 
 ```julia
-using JuAFEMGmsh
+using FerriteGmsh
 
 gmsh.initialize()
 dim = Int64(gmsh.model.getDimension())
