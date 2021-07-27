@@ -12,7 +12,7 @@ const gmshtojuafemcell = Dict("Line 2" => Line,
                               "Tetrahedron 4" => Tetrahedron,
                               "Tetrahedron 10" => QuadraticTetrahedron,
                               "Hexahedron 8" => Hexahedron,
-                              "Hexahedron 27" => QuadraticHexahedron)
+                              "Hexahedron 20" => QuadraticHexahedron)
 
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
