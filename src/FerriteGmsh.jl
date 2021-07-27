@@ -14,6 +14,18 @@ const gmshtojuafemcell = Dict("Line 2" => Line,
                               "Hexahedron 8" => Hexahedron,
                               "Hexahedron 20" => QuadraticHexahedron)
 
+function translate_elements(original_elements)
+    return original_elements
+end
+
+function translate_elements(original_elements::Vector{QuadraticTetrahedron})
+    ferrite_elements = QuadraticTetrahedron[]
+    for original_ele in original_elements
+        push!(ferrite_elements,QuadraticTetrahedron((original_ele.nodes[1], original_ele[2], original_ele[3], original_ele[4], original_ele[5], original_ele[6], original_ele[7], original_ele[8], original_ele[10], original_ele[9])),)
+    end
+    return ferrite_elements
+end
+
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
@@ -26,7 +38,8 @@ function toelements(dim::Int)
     elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(elementtypes[1]) 
     nodetags = convert(Array{Array{Int64,1},1}, nodetags)[1]
     juafemcell = gmshtojuafemcell[elementname]
-    elements = [juafemcell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
+    elements_gmsh = [juafemcell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
+    elements = translate_elements(elements_gmsh)
     return elements, convert(Vector{Vector{Int64}}, elementtags)[1]
 end
 
