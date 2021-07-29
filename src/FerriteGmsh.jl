@@ -48,16 +48,16 @@ function translate_elements(original_elements::Vector{QuadraticHexahedron})
                                                     original_ele.nodes[8],
                                                     original_ele.nodes[9],
                                                     original_ele.nodes[12],
-                                                    original_ele.nodes[17],
+                                                    original_ele.nodes[14],
                                                     original_ele.nodes[10],
-                                                    original_ele.nodes[18],
-                                                    original_ele.nodes[11],
+                                                    original_ele.nodes[17],
                                                     original_ele.nodes[19],
                                                     original_ele.nodes[20],
+                                                    original_ele.nodes[18],
+                                                    original_ele.nodes[11],
                                                     original_ele.nodes[13],
-                                                    original_ele.nodes[16],
-                                                    original_ele.nodes[14],
-                                                    original_ele.nodes[15])),)
+                                                    original_ele.nodes[15],
+                                                    original_ele.nodes[16])),)
     end
     return ferrite_elements
 end 
