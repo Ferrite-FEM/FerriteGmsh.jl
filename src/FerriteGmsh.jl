@@ -35,6 +35,33 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
     return ferrite_elements
 end
 
+function translate_elements(original_elements::Vector{QuadraticHexahedron})
+    ferrite_elements = QuadraticTetrahedron[]
+    for original_ele in original_elements
+        push!(ferrite_elements,QuadraticHexahedron((original_ele.nodes[1], 
+                                                    original_ele.nodes[2], 
+                                                    original_ele.nodes[3], 
+                                                    original_ele.nodes[4],
+                                                    original_ele.nodes[5],  
+                                                    original_ele.nodes[6], 
+                                                    original_ele.nodes[7], 
+                                                    original_ele.nodes[8],
+                                                    original_ele.nodes[9],
+                                                    original_ele.nodes[12],
+                                                    original_ele.nodes[17],
+                                                    original_ele.nodes[10],
+                                                    original_ele.nodes[18],
+                                                    original_ele.nodes[11],
+                                                    original_ele.nodes[19],
+                                                    original_ele.nodes[20],
+                                                    original_ele.nodes[13],
+                                                    original_ele.nodes[16],
+                                                    original_ele.nodes[14],
+                                                    original_ele.nodes[15])),)
+    end
+    return ferrite_elements
+end 
+
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
