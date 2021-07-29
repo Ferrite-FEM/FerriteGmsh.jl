@@ -36,7 +36,7 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
 end
 
 function translate_elements(original_elements::Vector{QuadraticHexahedron})
-    ferrite_elements = QuadraticTetrahedron[]
+    ferrite_elements = QuadraticHexahedron[]
     for original_ele in original_elements
         push!(ferrite_elements,QuadraticHexahedron((original_ele.nodes[1], 
                                                     original_ele.nodes[2], 
