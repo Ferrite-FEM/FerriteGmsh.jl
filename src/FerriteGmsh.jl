@@ -12,7 +12,7 @@ const gmshtojuafemcell = Dict("Line 2" => Line,
                               "Tetrahedron 4" => Tetrahedron,
                               "Tetrahedron 10" => QuadraticTetrahedron,
                               "Hexahedron 8" => Hexahedron,
-                              "Hexahedron 20" => QuadraticHexahedron)
+                              "Hexahedron 20" => Cell{3,20,6})
 
 function translate_elements(original_elements)
     return original_elements
@@ -35,10 +35,10 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
     return ferrite_elements
 end
 
-function translate_elements(original_elements::Vector{QuadraticHexahedron})
-    ferrite_elements = QuadraticHexahedron[]
+function translate_elements(original_elements::Vector{Cell{3,20,6}})
+    ferrite_elements = Cell{3,20,6}[]
     for original_ele in original_elements
-        push!(ferrite_elements,QuadraticHexahedron((original_ele.nodes[1], 
+        push!(ferrite_elements,Cell{3,20,6}((original_ele.nodes[1], 
                                                     original_ele.nodes[2], 
                                                     original_ele.nodes[3], 
                                                     original_ele.nodes[4],
