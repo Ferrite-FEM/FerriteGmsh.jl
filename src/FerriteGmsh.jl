@@ -105,8 +105,8 @@ function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrit
         facesettuple = Set{FaceIndex}()
         for boundaryface in boundaryfaces
             for (eleidx, elefaces) in enumerate(faces)
-                if boundaryface in elefaces
-                    localface = findfirst(x -> x == boundaryface, elefaces) 
+                if any(issubset.((boundaryface,), elefaces))
+                    localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
                     push!(facesettuple, FaceIndex(eleidx, localface))
                 end
             end
@@ -145,8 +145,10 @@ function saved_file_to_grid(filename::String; domain="")
 
     if fileextension != ".msh"
         gmsh.model.mesh.generate(dim)
-    end    
-
+    end
+ 
+    gmsh.model.mesh.renumberNodes()
+    gmsh.model.mesh.renumberElements()
     nodes = tonodes()
     elements, gmsh_elementidx = toelements(dim) 
     cellsets = tocellsets(dim, gmsh_elementidx)
