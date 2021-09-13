@@ -3,7 +3,7 @@ using Test
 using Ferrite
 using Debugger
 
-ip = Lagrange{3,RefCube,2}()
+ip = Serendipity{3,RefCube,2}()
 qr = QuadratureRule{3,RefCube}(2)
 cv = CellScalarValues(qr,ip)
 

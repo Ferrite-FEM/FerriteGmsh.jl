@@ -100,14 +100,14 @@ end
 
 function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
     faces = Ferrite.faces.(elements)
-    facesets = Dict{String,Set{Tuple{Int,Int}}}()
+    facesets = Dict{String,Set{FaceIndex}}()
     for (boundaryname, boundaryfaces) in boundarydict
-        facesettuple = Set{Tuple{Int,Int}}()
+        facesettuple = Set{FaceIndex}()
         for boundaryface in boundaryfaces
             for (eleidx, elefaces) in enumerate(faces)
                 if boundaryface in elefaces
                     localface = findfirst(x -> x == boundaryface, elefaces) 
-                    push!(facesettuple, (eleidx, localface))
+                    push!(facesettuple, FaceIndex(eleidx, localface))
                 end
             end
         end
