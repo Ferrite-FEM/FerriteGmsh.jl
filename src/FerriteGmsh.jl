@@ -62,6 +62,22 @@ function translate_elements(original_elements::Vector{Cell{3,20,6}})
     return ferrite_elements
 end 
 
+function translate_elements(original_elements::Vector{QuadraticQuadrilateral})
+    ferrite_elements = QuadraticQuadrilateral[]
+    for original_ele in original_elements
+        push!(ferrite_elements, QuadraticQuadrilateral((original_ele.nodes[2],
+                                                        original_ele.nodes[3],
+                                                        original_ele.nodes[4],
+                                                        original_ele.nodes[1],
+                                                        original_ele.nodes[6],
+                                                        original_ele.nodes[7],
+                                                        original_ele.nodes[8],
+                                                        original_ele.nodes[5],
+                                                        original_ele.nodes[9])),)
+    end
+    return ferrite_elements
+end
+
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
@@ -105,7 +121,7 @@ function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrit
         facesettuple = Set{FaceIndex}()
         for boundaryface in boundaryfaces
             for (eleidx, elefaces) in enumerate(faces)
-                if any(issubset.((boundaryface,), elefaces))
+                if any(issubset.(elefaces, (boundaryface,)))
                     localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
                     push!(facesettuple, FaceIndex(eleidx, localface))
                 end
