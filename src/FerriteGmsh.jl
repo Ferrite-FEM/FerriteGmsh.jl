@@ -73,12 +73,23 @@ end
 
 function toelements(dim::Int)
     elementtypes, elementtags, nodetags = gmsh.model.mesh.getElements(dim, -1)
-    @assert length(elementtypes) == 1 "only one element type per mesh is supported"
-    elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(elementtypes[1]) 
-    nodetags = convert(Array{Array{Int64,1},1}, nodetags)[1]
-    ferritecell = gmshtoferritecell[elementname]
-    elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
-    elements = translate_elements(elements_gmsh)
+    nodetags_all = convert(Vector{Vector{Int64}}, nodetags)
+    if length(elementtypes) == 1
+        elementname, _, _, _, _, _ = gmsh.model.mesh.getElementProperties(elementtypes[1])
+        elements = gmshtoferritecell[elementname][]
+    else
+        elements = Ferrite.AbstractCell[]
+    end
+
+    for (eletypeidx,eletype) in enumerate(elementtypes)
+        nodetags = nodetags_all[eletypeidx]
+        elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(eletype) 
+        ferritecell = gmshtoferritecell[elementname]
+        elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
+        elements_batch = translate_elements(elements_gmsh)
+        append!(elements,elements_batch)
+    end
+
     return elements, convert(Vector{Vector{Int64}}, elementtags)[1]
 end
 
