@@ -90,7 +90,6 @@ function toelements(dim::Int)
         append!(elements,elements_batch)
     end
 
-    @show convert(Vector{Vector{Int}},elementtags)
     return elements, reduce(vcat,convert(Vector{Vector{Int64}}, elementtags))
 end
 
