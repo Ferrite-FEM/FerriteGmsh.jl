@@ -90,7 +90,8 @@ function toelements(dim::Int)
         append!(elements,elements_batch)
     end
 
-    return elements, convert(Vector{Vector{Int64}}, elementtags)[1]
+    @show convert(Vector{Vector{Int}},elementtags)
+    return elements, reduce(vcat,convert(Vector{Vector{Int64}}, elementtags))
 end
 
 function toboundary(dim::Int)
@@ -136,14 +137,11 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
     for (_, physicaltag) in physicalgroups 
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
         isempty(gmshname) ? (name = "$physicaltag") : (name = gmshname)
-        cellsetentities = gmsh.model.getEntitiesForPhysicalGroup(dim, physicaltag)
+        _, elementtags, _= gmsh.model.mesh.getElements(dim, physicaltag)
+        elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
         cellsetelements = Set{Int}()
-        for entity in cellsetentities
-            _, elementtags, _ = gmsh.model.mesh.getElements(dim, entity)
-            elementtags = convert(Vector{Vector{Int64}}, elementtags)[1]
-            for elementtag in elementtags
-                push!(cellsetelements, findfirst(isequal(elementtag), global_elementtags))
-            end
+        for ele in elementtags
+            push!(cellsetelements, findfirst(isequal(ele), global_elementtags))
         end
         cellsets[name] = cellsetelements
     end
