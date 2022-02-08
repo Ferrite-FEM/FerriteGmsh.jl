@@ -73,13 +73,24 @@ end
 
 function toelements(dim::Int)
     elementtypes, elementtags, nodetags = gmsh.model.mesh.getElements(dim, -1)
-    @assert length(elementtypes) == 1 "only one element type per mesh is supported"
-    elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(elementtypes[1]) 
-    nodetags = convert(Array{Array{Int64,1},1}, nodetags)[1]
-    ferritecell = gmshtoferritecell[elementname]
-    elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
-    elements = translate_elements(elements_gmsh)
-    return elements, convert(Vector{Vector{Int64}}, elementtags)[1]
+    nodetags_all = convert(Vector{Vector{Int64}}, nodetags)
+    if length(elementtypes) == 1
+        elementname, _, _, _, _, _ = gmsh.model.mesh.getElementProperties(elementtypes[1])
+        elements = gmshtoferritecell[elementname][]
+    else
+        elements = Ferrite.AbstractCell[]
+    end
+
+    for (eletypeidx,eletype) in enumerate(elementtypes)
+        nodetags = nodetags_all[eletypeidx]
+        elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(eletype) 
+        ferritecell = gmshtoferritecell[elementname]
+        elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
+        elements_batch = translate_elements(elements_gmsh)
+        append!(elements,elements_batch)
+    end
+
+    return elements, reduce(vcat,convert(Vector{Vector{Int64}}, elementtags))
 end
 
 function toboundary(dim::Int)
@@ -125,16 +136,16 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
     for (_, physicaltag) in physicalgroups 
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
         isempty(gmshname) ? (name = "$physicaltag") : (name = gmshname)
-        cellsetentities = gmsh.model.getEntitiesForPhysicalGroup(dim, physicaltag)
-        cellsetelements = Set{Int}()
-        for entity in cellsetentities
-            _, elementtags, _ = gmsh.model.mesh.getElements(dim, entity)
-            elementtags = convert(Vector{Vector{Int64}}, elementtags)[1]
-            for elementtag in elementtags
-                push!(cellsetelements, findfirst(isequal(elementtag), global_elementtags))
+        entities = gmsh.model.getEntitiesForPhysicalGroup(dim,physicaltag)
+        for entity in entities
+            _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
+            elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
+            cellsetelements = Set{Int}()
+            for ele in elementtags
+                push!(cellsetelements, findfirst(isequal(ele), global_elementtags))
             end
+            cellsets[name] = cellsetelements
         end
-        cellsets[name] = cellsetelements
     end
     return cellsets
 end
