@@ -18,19 +18,18 @@ FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
 
 ## Example
 
-![Imgur](https://i.imgur.com/eC2W4SZ.png)
+![Imgur](https://i.imgur.com/qzQKx4x.png)
 
-The above example is taken from the 5th tutorial of [gmsh.jl](https://github.com/koehlerson/gmsh.jl).
-In this tutorial `domain = "10"` corresponds to a specific `PhysicalGroup`, that gathers all cells of the computational domain. 
+The above example is taken from the `test_mixed_grid.jl` file which can be found in the `test` folder.
 
-This package offers two workflows. The user can either load an already meshed file `.msh` or use it in an interactive way.
-
+This package offers two workflows. The user can either load an already defined geometry by a `.msh,.geo` file or use it in an interactive way.
 The first approach can be achieved by
 
 ```julia
 using FerriteGmsh
 
-saved_file_to_grid("t5.msh",domain="10")
+saved_file_to_grid("meshfile.msh")
+saved_file_to_grid("meshfile.geo") #gets meshed automatically
 ```
 
 while the latter is done by
@@ -59,7 +58,7 @@ gmsh.finalize()
 Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 ```
 
-## Elements numberimg & Supported elements
+## Elements numbering & Supported elements
 
 Ferrite might have a different element node-numbering scheme if compared to Gmsh. For correct portability of a mesh from Gmsh, it is important to transform Gmsh numbering in the one that Ferrite is expecting. Having the same numbering is important because the numbering provides information about which basis function is placed at each position, as well as the orientation of the elements. 
 
@@ -69,7 +68,7 @@ To check the numbering used in Ferrite, we could for example generate a grid wit
 
 ```julia
 using Ferrite
-grid =  generate_grid(QuadraticQuadrilateral,(1,1))
+grid = generate_grid(QuadraticQuadrilateral,(1,1))
 ```
 
 Accessing the cells of that element:
