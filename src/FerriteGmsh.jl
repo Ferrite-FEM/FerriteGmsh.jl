@@ -1,9 +1,12 @@
 module FerriteGmsh
-
-using gmsh
 using Ferrite
+using Reexport
 
-const gmshtojuafemcell = Dict("Line 2" => Line,
+import gmsh_jll
+include(gmsh_jll.gmsh_api)
+@reexport import .gmsh
+
+const gmshtoferritecell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
                               "Triangle 3" => Triangle,
                               "Triangle 6" => QuadraticTriangle,
@@ -39,25 +42,25 @@ function translate_elements(original_elements::Vector{Cell{3,20,6}})
     ferrite_elements = Cell{3,20,6}[]
     for original_ele in original_elements
         push!(ferrite_elements,Cell{3,20,6}((original_ele.nodes[1], 
-                                                    original_ele.nodes[2], 
-                                                    original_ele.nodes[3], 
-                                                    original_ele.nodes[4],
-                                                    original_ele.nodes[5],  
-                                                    original_ele.nodes[6], 
-                                                    original_ele.nodes[7], 
-                                                    original_ele.nodes[8],
-                                                    original_ele.nodes[9],
-                                                    original_ele.nodes[12],
-                                                    original_ele.nodes[14],
-                                                    original_ele.nodes[10],
-                                                    original_ele.nodes[17],
-                                                    original_ele.nodes[19],
-                                                    original_ele.nodes[20],
-                                                    original_ele.nodes[18],
-                                                    original_ele.nodes[11],
-                                                    original_ele.nodes[13],
-                                                    original_ele.nodes[15],
-                                                    original_ele.nodes[16])),)
+                                             original_ele.nodes[2], 
+                                             original_ele.nodes[3], 
+                                             original_ele.nodes[4],
+                                             original_ele.nodes[5],  
+                                             original_ele.nodes[6], 
+                                             original_ele.nodes[7], 
+                                             original_ele.nodes[8],
+                                             original_ele.nodes[9],
+                                             original_ele.nodes[12],
+                                             original_ele.nodes[14],
+                                             original_ele.nodes[10],
+                                             original_ele.nodes[17],
+                                             original_ele.nodes[19],
+                                             original_ele.nodes[20],
+                                             original_ele.nodes[18],
+                                             original_ele.nodes[11],
+                                             original_ele.nodes[13],
+                                             original_ele.nodes[15],
+                                             original_ele.nodes[16])),)
     end
     return ferrite_elements
 end 
@@ -73,8 +76,8 @@ function toelements(dim::Int)
     @assert length(elementtypes) == 1 "only one element type per mesh is supported"
     elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(elementtypes[1]) 
     nodetags = convert(Array{Array{Int64,1},1}, nodetags)[1]
-    juafemcell = gmshtojuafemcell[elementname]
-    elements_gmsh = [juafemcell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
+    ferritecell = gmshtoferritecell[elementname]
+    elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
     elements = translate_elements(elements_gmsh)
     return elements, convert(Vector{Vector{Int64}}, elementtags)[1]
 end

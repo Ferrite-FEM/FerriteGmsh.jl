@@ -12,10 +12,7 @@ FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
 
 ## Installation
 
-In order to use this package, you need to install `gmsh.jl` first
-
 ```
-]add https://github.com/koehlerson/gmsh.jl.git
 ]add https://github.com/koehlerson/FerriteGmsh.jl.git
 ```
 
