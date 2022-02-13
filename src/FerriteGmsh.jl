@@ -137,10 +137,10 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
         isempty(gmshname) ? (name = "$physicaltag") : (name = gmshname)
         entities = gmsh.model.getEntitiesForPhysicalGroup(dim,physicaltag)
+        cellsetelements = Set{Int}()
         for entity in entities
             _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
             elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
-            cellsetelements = Set{Int}()
             for ele in elementtags
                 push!(cellsetelements, findfirst(isequal(ele), global_elementtags))
             end
