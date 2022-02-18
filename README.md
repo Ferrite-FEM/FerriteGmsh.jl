@@ -5,7 +5,7 @@
 
 [docs-dev-img]: https://img.shields.io/badge/docs-dev-blue.svg
 
-[docs-dev-url]: http://koehlerson.github.io/gmsh.jl/dev/
+[docs-dev-url]: http://ferrite-fem.github.io/FerriteGmsh.jl/dev/
 -->
 
 FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
@@ -13,7 +13,7 @@ FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
 ## Installation
 
 ```
-]add https://github.com/koehlerson/FerriteGmsh.jl.git
+]add https://github.com/Ferrite-FEM/FerriteGmsh.jl.git
 ```
 
 ## Example
