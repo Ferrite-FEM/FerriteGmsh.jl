@@ -151,6 +151,13 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
 end
 
 function saved_file_to_grid(filename::String; domain="")
+    # Check that file exists since Gmsh assumes we want to start a new model
+    # if passing a non-existing path. In this function we need the model to exist.
+    if !isfile(filename)
+        # This is the error that is thrown by open("non-existing"),
+        # error code 2 is "no such file or directory".
+        throw(SystemError("opening file $(repr(filename))", 2))
+    end
     gmsh.initialize()
     gmsh.open(filename)
     fileextension = filename[findlast(isequal('.'), filename):end]
