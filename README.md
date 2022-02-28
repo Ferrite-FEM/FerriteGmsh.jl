@@ -41,8 +41,15 @@ gmsh.initialize()
 dim = Int64(gmsh.model.getDimension())
 facedim = dim - 1
 
-# do stuff to prescribe your gmsh model
+# do stuff to describe your gmsh model
 
+# renumber the gmsh entities, such that the final used entities start by index 1
+# this step is crucial, because Ferrite.jl uses the implicit entity index based on an array index
+# and thus, need to start at 1
+gmsh.model.mesh.renumberNodes()
+gmsh.model.mesh.renumberElements()
+
+# transfer the gmsh information
 nodes = tonodes()
 elements, gmsh_elementidx = toelements(dim)
 cellsets = tocellsets(dim, gmsh_elementidx)
