@@ -150,6 +150,12 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
     return cellsets
 end
 
+"""
+    saved_file_to_grid(filename::String; domain="")
+
+Open the Gmsh file `filename` (ie a `.geo` or `.msh` file) and return the corresponding
+`Ferrite.Grid`.
+"""
 function saved_file_to_grid(filename::String; domain="")
     # Check that file exists since Gmsh assumes we want to start a new model
     # if passing a non-existing path. In this function we need the model to exist.
@@ -162,12 +168,23 @@ function saved_file_to_grid(filename::String; domain="")
     gmsh.open(filename)
     fileextension = filename[findlast(isequal('.'), filename):end]
     dim = Int64(gmsh.model.getDimension()) # dont ask..
-    facedim = dim - 1
 
     if fileextension != ".msh"
         gmsh.model.mesh.generate(dim)
     end
- 
+    grid = togrid(; domain=domain)
+    should_finalize && Gmsh.finalize()
+    return grid
+end
+
+"""
+    togrid(; domain="")
+
+Generate a `Ferrite.Grid` from the current active/open model in the Gmsh library.
+"""
+function togrid(; domain="")
+    dim = Int64(gmsh.model.getDimension())
+    facedim = dim - 1
     gmsh.model.mesh.renumberNodes()
     gmsh.model.mesh.renumberElements()
     nodes = tonodes()
@@ -181,12 +198,10 @@ function saved_file_to_grid(filename::String; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
-    should_finalize && Gmsh.finalize()
-        
     return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacesets, tocellsets, saved_file_to_grid
+export tonodes, toelements, toboundary, tofacesets, tocellsets, saved_file_to_grid, togrid
 
 end
