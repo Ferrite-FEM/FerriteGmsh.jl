@@ -1,10 +1,9 @@
 module FerriteGmsh
 using Ferrite
-using Reexport
 
 import gmsh_jll
 include(gmsh_jll.gmsh_api)
-@reexport import .gmsh
+import .gmsh
 
 const gmshtoferritecell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
