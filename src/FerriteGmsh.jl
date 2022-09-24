@@ -5,6 +5,38 @@ import gmsh_jll
 include(gmsh_jll.gmsh_api)
 import .gmsh
 
+"""
+    FerriteGmsh.initialize(; finalize_atexit=true)
+
+Wrapper around `gmsh.initialize` which make sure to only call it if `gmsh` is not already
+initialized. Return `true` if `gmsh.initialize` was called, and `false` if `gmsh` was
+already initialized.
+
+If `finalize_atexit` is `true` a Julia exit hook is added, which calls
+`gmsh.finalize()`.
+"""
+function initialize(; finalize_atexit=true)
+    if Bool(gmsh.isInitialized())
+        return false
+    end
+    gmsh.initialize()
+    if finalize_atexit
+        atexit(finalize)
+    end
+    return true
+end
+
+"""
+    FerriteGmsh.finalize()
+
+Wrapper around `gmsh.finalize` which make sure to only call it if `gmsh` is initialized.
+"""
+function finalize()
+    if Bool(gmsh.isInitialized())
+        gmsh.finalize()
+    end
+end
+
 const gmshtoferritecell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
                               "Triangle 3" => Triangle,
@@ -160,7 +192,7 @@ function saved_file_to_grid(filename::String; domain="")
         # error code 2 is "no such file or directory".
         throw(SystemError("opening file $(repr(filename))", 2))
     end
-    gmsh.initialize()
+    should_finalize = initialize()
     gmsh.open(filename)
     fileextension = filename[findlast(isequal('.'), filename):end]
     dim = Int64(gmsh.model.getDimension()) # dont ask..
@@ -183,8 +215,9 @@ function saved_file_to_grid(filename::String; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
-    gmsh.finalize()
-        
+
+    should_finalize && finalize()
+
     return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 end
 
