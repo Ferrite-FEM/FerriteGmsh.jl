@@ -73,6 +73,9 @@ end
 
 function toelements(dim::Int)
     elementtypes, elementtags, nodetags = gmsh.model.mesh.getElements(dim, -1)
+    if isempty(elementtypes)
+        error("could not find any elements with dimension $dim")
+    end
     nodetags_all = convert(Vector{Vector{Int64}}, nodetags)
     if length(elementtypes) == 1
         elementname, _, _, _, _, _ = gmsh.model.mesh.getElementProperties(elementtypes[1])
