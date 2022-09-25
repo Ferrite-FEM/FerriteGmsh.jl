@@ -1,7 +1,7 @@
 using FerriteGmsh
 using Ferrite
 
-grid = saved_file_to_grid("test/holed_plate.msh")
+grid = togrid("test/holed_plate.msh")
 
 dh = DofHandler(grid)
 push!(dh, :u, 1) 
