@@ -3,7 +3,7 @@
     qr = QuadratureRule{3,RefCube}(2)
     cv = CellScalarValues(qr,ip)
 
-    grid = saved_file_to_grid("quadhex_serendipity1.msh")
+    grid = togrid("quadhex_serendipity1.msh")
     dh = DofHandler(grid)
     push!(dh, :u, 2)
     close!(dh)

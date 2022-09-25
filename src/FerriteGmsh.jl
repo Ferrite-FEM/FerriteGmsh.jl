@@ -151,12 +151,12 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
 end
 
 """
-    saved_file_to_grid(filename::String; domain="")
+    togrid(filename::String; domain="")
 
 Open the Gmsh file `filename` (ie a `.geo` or `.msh` file) and return the corresponding
 `Ferrite.Grid`.
 """
-function saved_file_to_grid(filename::String; domain="")
+function togrid(filename::String; domain="")
     # Check that file exists since Gmsh assumes we want to start a new model
     # if passing a non-existing path. In this function we need the model to exist.
     if !isfile(filename)
@@ -176,6 +176,8 @@ function saved_file_to_grid(filename::String; domain="")
     should_finalize && Gmsh.finalize()
     return grid
 end
+
+@deprecate saved_file_to_grid togrid
 
 """
     togrid(; domain="")
@@ -202,6 +204,6 @@ function togrid(; domain="")
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacesets, tocellsets, saved_file_to_grid, togrid
+export tonodes, toelements, toboundary, tofacesets, tocellsets, togrid
 
 end

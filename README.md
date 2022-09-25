@@ -28,8 +28,8 @@ The first approach can be achieved by
 ```julia
 using FerriteGmsh
 
-saved_file_to_grid("meshfile.msh")
-saved_file_to_grid("meshfile.geo") #gets meshed automatically
+togrid("meshfile.msh")
+togrid("meshfile.geo") #gets meshed automatically
 ```
 
 while the latter is done by
