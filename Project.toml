@@ -5,9 +5,8 @@ version = "0.1.0"
 
 [deps]
 Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
-Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
-gmsh_jll = "630162c2-fc9b-58b3-9910-8442a8a132e6"
+Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
 
 [compat]
 Ferrite = "0.3"
-Reexport = "1"
+Gmsh = "0.2.1"

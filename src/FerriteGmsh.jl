@@ -1,10 +1,7 @@
 module FerriteGmsh
-using Ferrite
-using Reexport
 
-import gmsh_jll
-include(gmsh_jll.gmsh_api)
-@reexport import .gmsh
+using Ferrite
+using Gmsh: Gmsh, gmsh
 
 const gmshtoferritecell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
@@ -161,7 +158,7 @@ function saved_file_to_grid(filename::String; domain="")
         # error code 2 is "no such file or directory".
         throw(SystemError("opening file $(repr(filename))", 2))
     end
-    gmsh.initialize()
+    should_finalize = Gmsh.initialize()
     gmsh.open(filename)
     fileextension = filename[findlast(isequal('.'), filename):end]
     dim = Int64(gmsh.model.getDimension()) # dont ask..
@@ -184,7 +181,7 @@ function saved_file_to_grid(filename::String; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
-    gmsh.finalize()
+    should_finalize && Gmsh.finalize()
         
     return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 end
