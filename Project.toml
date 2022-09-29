@@ -10,3 +10,9 @@ Gmsh = "705231aa-382f-11e9-3f0c-b7cb4346fdeb"
 [compat]
 Ferrite = "0.3"
 Gmsh = "0.2.1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
