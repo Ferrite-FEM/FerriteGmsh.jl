@@ -13,7 +13,7 @@ FerriteGmsh tries to simplify the conversion from a gmsh mesh to a Ferrite mesh.
 ## Installation
 
 ```
-]add https://github.com/Ferrite-FEM/FerriteGmsh.jl.git
+]add FerriteGmsh
 ```
 
 ## Example
