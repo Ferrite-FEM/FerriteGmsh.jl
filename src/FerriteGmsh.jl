@@ -187,6 +187,10 @@ Generate a `Ferrite.Grid` from the current active/open model in the Gmsh library
 function togrid(; domain="")
     dim = Int64(gmsh.model.getDimension())
     facedim = dim - 1
+    saveall_flag = Bool(gmsh.option.getNumber("Mesh.SaveAll"))
+    if !saveall_flag
+        gmsh.option.setNumber("Mesh.SaveAll",1)
+    end
     gmsh.model.mesh.renumberNodes()
     gmsh.model.mesh.renumberElements()
     nodes = tonodes()
