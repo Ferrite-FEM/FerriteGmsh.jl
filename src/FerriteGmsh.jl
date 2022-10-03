@@ -188,6 +188,7 @@ function togrid(; domain="")
     dim = Int64(gmsh.model.getDimension())
     facedim = dim - 1
     saveall_flag = Bool(gmsh.option.getNumber("Mesh.SaveAll"))
+    # set the save_all flag to one. hotfix #TODO for future
     if !saveall_flag
         gmsh.option.setNumber("Mesh.SaveAll",1)
     end
@@ -204,6 +205,10 @@ function togrid(; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
+    # reset the save_all flag to the default value
+    if !saveall_flag
+        gmsh.option.setNumber("Mesh.SaveAll",0)
+    end
     return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
 end
 
