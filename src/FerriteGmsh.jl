@@ -3,6 +3,10 @@ module FerriteGmsh
 using Ferrite
 using Gmsh: Gmsh, gmsh
 
+if !isdefined(Ferrite, :SQuadraticHexahedron)
+    SQuadraticHexahedron = Cell{3,20,6}
+end
+
 const gmshtoferritecell = Dict("Line 2" => Line,
                               "Line 3" => QuadraticLine,
                               "Triangle 3" => Triangle,
@@ -12,7 +16,7 @@ const gmshtoferritecell = Dict("Line 2" => Line,
                               "Tetrahedron 4" => Tetrahedron,
                               "Tetrahedron 10" => QuadraticTetrahedron,
                               "Hexahedron 8" => Hexahedron,
-                              "Hexahedron 20" => Cell{3,20,6})
+                              "Hexahedron 20" => SQuadraticHexahedron)
 
 function translate_elements(original_elements)
     return original_elements
@@ -35,10 +39,10 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
     return ferrite_elements
 end
 
-function translate_elements(original_elements::Vector{Cell{3,20,6}})
-    ferrite_elements = Cell{3,20,6}[]
+function translate_elements(original_elements::Vector{SQuadraticHexahedron})
+    ferrite_elements = SQuadraticHexahedron[]
     for original_ele in original_elements
-        push!(ferrite_elements,Cell{3,20,6}((original_ele.nodes[1], 
+        push!(ferrite_elements,SQuadraticHexahedron((original_ele.nodes[1], 
                                              original_ele.nodes[2], 
                                              original_ele.nodes[3], 
                                              original_ele.nodes[4],
