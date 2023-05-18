@@ -170,7 +170,7 @@ Ferrite.nodes_to_vtkorder(cell::Cell{3, 27, 6}) = [
     cell.nodes[26],
     cell.nodes[27], # interior
 ]
-#vtk_save(vtk_grid("QuadHexRing", togrid("/home/dogiermann/Repos/Thunderbolt.jl/data/meshes/ring/MidVentricularSectionQuadHex.msh")))
+
 function translate_elements(original_elements::Vector{Cell{3,27,6}})
     ferrite_elements = Cell{3,27,6}[]
     for original_ele in original_elements
