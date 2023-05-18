@@ -12,7 +12,8 @@ const gmshtoferritecell = Dict("Line 2" => Line,
                               "Tetrahedron 4" => Tetrahedron,
                               "Tetrahedron 10" => QuadraticTetrahedron,
                               "Hexahedron 8" => Hexahedron,
-                              "Hexahedron 20" => Cell{3,20,6})
+                              "Hexahedron 20" => Cell{3,20,6},
+                              "Hexahedron 27" => Cell{3,27,6})
 
 function translate_elements(original_elements)
     return original_elements
@@ -35,6 +36,44 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
     return ferrite_elements
 end
 
+#
+#  y
+#
+#  ^
+#  |
+#  |
+#  +--- > x
+#  \\
+#   \\
+#    \\
+#     z
+#
+#     GMSH
+# 4----14----3
+# |\         |\
+# |16        | 15
+# 10 \       12 \
+# |   8----20+---7
+# |   |      |   |
+# 1---+-9----2   |
+#  \ 18       \  19
+#  11 |        13|
+#    \|         \|
+#     5----17----6
+#
+#    Ferrite
+# 4----11----3
+# |\         |\
+# |20        | 19
+# 12 \       10 \
+# |   8----15+---7
+# |   |      |   |
+# 1---+-9----2   |
+#  \ 16       \  14
+#  17 |        18|
+#    \|         \|
+#     5----13----6
+#
 function translate_elements(original_elements::Vector{Cell{3,20,6}})
     ferrite_elements = Cell{3,20,6}[]
     for original_ele in original_elements
@@ -46,7 +85,7 @@ function translate_elements(original_elements::Vector{Cell{3,20,6}})
                                              original_ele.nodes[6], 
                                              original_ele.nodes[7], 
                                              original_ele.nodes[8],
-                                             original_ele.nodes[9],
+                                             original_ele.nodes[9],  # edges
                                              original_ele.nodes[12],
                                              original_ele.nodes[14],
                                              original_ele.nodes[10],
@@ -58,6 +97,111 @@ function translate_elements(original_elements::Vector{Cell{3,20,6}})
                                              original_ele.nodes[13],
                                              original_ele.nodes[15],
                                              original_ele.nodes[16])),)
+    end
+    return ferrite_elements
+end
+
+
+#  y
+#
+#  ^
+#  |
+#  |
+#  +--- > x
+#  \\
+#   \\
+#    \\
+#     z
+#
+#     GMSH
+# 4----14----3
+# |\         |\
+# |16    25  | 15
+# 10 \ 21    12 \
+# |   8----20+---7
+# |23 |  27  | 24|
+# 1---+-9----2   |
+#  \ 18    26 \  19
+#  11 |  22    13|
+#    \|         \|
+#     5----17----6
+#
+#    Ferrite
+# 4----11----3
+# |\         |\
+# |20    24  | 19
+# 12 \ 21    10 \
+# |   8----15+---7
+# |25 |  27  | 23|
+# 1---+-9----2   |
+#  \ 16     26\  14
+#  17 |  22    18|
+#    \|         \|
+#     5----13----6
+#
+Ferrite.faces(c::Cell{3,27,6}) = ((c.nodes[1],c.nodes[4],c.nodes[3],c.nodes[2]), (c.nodes[1],c.nodes[2],c.nodes[6],c.nodes[5]), (c.nodes[2],c.nodes[3],c.nodes[7],c.nodes[6]), (c.nodes[3],c.nodes[4],c.nodes[8],c.nodes[7]), (c.nodes[1],c.nodes[5],c.nodes[8],c.nodes[4]), (c.nodes[5],c.nodes[6],c.nodes[7],c.nodes[8]))
+Ferrite.cell_to_vtkcell(::Type{Cell{3, 27, 6}}) = WriteVTK.VTKCellTypes.VTK_TRIQUADRATIC_HEXAHEDRON
+Ferrite.nodes_to_vtkorder(cell::Cell{3, 27, 6}) = [
+    cell.nodes[1], # faces
+    cell.nodes[2],
+    cell.nodes[3],
+    cell.nodes[4],
+    cell.nodes[5],
+    cell.nodes[6],
+    cell.nodes[7],
+    cell.nodes[8],
+    cell.nodes[9], # edges
+    cell.nodes[10],
+    cell.nodes[11],
+    cell.nodes[12],
+    cell.nodes[13],
+    cell.nodes[14],
+    cell.nodes[15],
+    cell.nodes[16],
+    cell.nodes[17],
+    cell.nodes[18],
+    cell.nodes[19],
+    cell.nodes[20],
+    cell.nodes[25], # faces
+    cell.nodes[23],
+    cell.nodes[22],
+    cell.nodes[24],
+    cell.nodes[21],
+    cell.nodes[26],
+    cell.nodes[27], # interior
+]
+#vtk_save(vtk_grid("QuadHexRing", togrid("/home/dogiermann/Repos/Thunderbolt.jl/data/meshes/ring/MidVentricularSectionQuadHex.msh")))
+function translate_elements(original_elements::Vector{Cell{3,27,6}})
+    ferrite_elements = Cell{3,27,6}[]
+    for original_ele in original_elements
+        push!(ferrite_elements,Cell{3,27,6}((original_ele.nodes[1], 
+                                             original_ele.nodes[2], 
+                                             original_ele.nodes[3], 
+                                             original_ele.nodes[4],
+                                             original_ele.nodes[5],  
+                                             original_ele.nodes[6], 
+                                             original_ele.nodes[7], 
+                                             original_ele.nodes[8],
+                                             original_ele.nodes[9], # edge
+                                             original_ele.nodes[12],
+                                             original_ele.nodes[14],
+                                             original_ele.nodes[10],
+                                             original_ele.nodes[17],
+                                             original_ele.nodes[19],
+                                             original_ele.nodes[20],
+                                             original_ele.nodes[18],
+                                             original_ele.nodes[11],
+                                             original_ele.nodes[13],
+                                             original_ele.nodes[15],
+                                             original_ele.nodes[16],
+                                             original_ele.nodes[21], # face
+                                             original_ele.nodes[22],
+                                             original_ele.nodes[24],
+                                             original_ele.nodes[25],
+                                             original_ele.nodes[23],
+                                             original_ele.nodes[26],
+                                             original_ele.nodes[27],
+                                             )),)
     end
     return ferrite_elements
 end 
