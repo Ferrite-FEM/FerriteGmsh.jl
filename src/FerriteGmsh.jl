@@ -112,6 +112,38 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
+function tonodesets(entity_dim::Integer, global_nodetags::Vector{<:Node{dim}}) where dim
+   nodesets = Dict{String,Set{Int}}()
+   physical_groups = gmsh.model.getPhysicalGroups(entity_dim)
+   # loop over all physical groups
+   for (_, physical_tag) in physical_groups
+       # nodeset for the current physical group
+       nodeset = Set{Int}()
+       physical_name = gmsh.model.get_physical_name(entity_dim, physical_tag)
+       # set the name of the nodeset
+       if isempty(physical_name)
+           name = "$physical_tag"
+       else
+           name = physical_name
+       end
+       # get CAD objects of the physical group
+       entities = gmsh.model.get_entities_for_physical_group(entity_dim, physical_tag)
+       # loop over all CAD objects in the physical group
+       for entity in entities
+           nodes_id, nodes_coord, _= gmsh.model.mesh.get_nodes(entity_dim, entity)
+           # cast the coordinates of the nodes into a dim x num_nodes array
+           nodes_coord = reshape(nodes_coord,dim,length(nodes_id))
+           nodes_id = convert(Vector{Int}, nodes_id)
+           for i in 1:length(nodes_id)
+               node = Node(Vec{3}(nodes_coord[:,i]))
+               push!(nodeset, findfirst(isequal(node), global_nodetags))
+           end
+           nodesets[name] = nodeset
+       end
+   end
+   return nodesets
+end
+
 function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
     faces = Ferrite.faces.(elements)
     facesets = Dict{String,Set{FaceIndex}}()
@@ -205,6 +237,7 @@ function togrid(; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
+    #TODO get nodesets
     # reset the save_all flag to the default value
     if !saveall_flag
         gmsh.option.setNumber("Mesh.SaveAll",0)
