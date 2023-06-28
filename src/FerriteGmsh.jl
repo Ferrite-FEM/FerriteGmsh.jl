@@ -237,6 +237,7 @@ function togrid(; domain="")
 
     boundarydict = toboundary(facedim)
     facesets = tofacesets(boundarydict, elements)
+    #TODO get nodesets
     # reset the save_all flag to the default value
     if !saveall_flag
         gmsh.option.setNumber("Mesh.SaveAll",0)
