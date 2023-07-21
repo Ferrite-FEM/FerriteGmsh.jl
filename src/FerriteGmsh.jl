@@ -112,18 +112,23 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
+function _add_to_facesettuple!(facesettuple::Set{FaceIndex}, boundaryface::Tuple, faces)
+    for (eleidx, elefaces) in enumerate(faces)
+        if any(issubset.(elefaces, (boundaryface,)))
+            localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
+            push!(facesettuple, FaceIndex(eleidx, localface))
+        end
+    end
+    return facesettuple
+end
+
 function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
     faces = Ferrite.faces.(elements)
     facesets = Dict{String,Set{FaceIndex}}()
     for (boundaryname, boundaryfaces) in boundarydict
         facesettuple = Set{FaceIndex}()
         for boundaryface in boundaryfaces
-            for (eleidx, elefaces) in enumerate(faces)
-                if any(issubset.(elefaces, (boundaryface,)))
-                    localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
-                    push!(facesettuple, FaceIndex(eleidx, localface))
-                end
-            end
+            _add_to_facesettuple!(facesettuple, boundaryface, faces)
         end
         facesets[boundaryname] = facesettuple
     end
