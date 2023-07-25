@@ -1,7 +1,7 @@
 name = "FerriteGmsh"
 uuid = "4f95f4f8-b27c-4ae5-9a39-ea55e634e36b"
 authors = ["Maximilian Köhler <maximilian.koehler@ruhr-uni-bochum.de>"]
-version = "1.0.0"
+version = "1.0.1"
 
 [deps]
 Ferrite = "c061ca5d-56c9-439f-9c0e-210fe06d3992"
