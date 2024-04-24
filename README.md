@@ -85,7 +85,7 @@ julia> grid.cells
 1-element Vector{QuadraticQuadrilateral}: 
 QuadraticQuadrilateral((1, 3, 9, 7, 2, 6, 8, 4, 5))
 ```
-where the numbers refers to the global nodes ids, which can be easily visualized in the following manner using the package [FerriteViz](https://github.com/koehlerson/FerriteViz.jl).
+where the numbers refers to the global nodes ids, which can be easily visualized in the following manner using the package [FerriteViz](https://github.com/Ferrite-FEM/FerriteViz.jl).
 
 
 ```julia
