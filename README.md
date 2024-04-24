@@ -85,16 +85,16 @@ julia> grid.cells
 1-element Vector{QuadraticQuadrilateral}: 
 QuadraticQuadrilateral((1, 3, 9, 7, 2, 6, 8, 4, 5))
 ```
-where the numbers refers to the global nodes ids, which can be easily visualized in the following manner using the package [FerriteVis](https://github.com/koehlerson/FerriteVis.jl).
+where the numbers refers to the global nodes ids, which can be easily visualized in the following manner using the package [FerriteViz](https://github.com/koehlerson/FerriteViz.jl).
 
 
 ```julia
 using Ferrite
-using FerriteVis
+using FerriteViz
 
 grid =  generate_grid(QuadraticQuadrilateral,(1,1))
 
-FerriteVis.wireframe(grid,markersize=14,strokewidth=20,textsize = 25, nodelabels=true,celllabels=true)
+FerriteViz.wireframe(grid,markersize=14,strokewidth=20,textsize = 25, nodelabels=true,celllabels=true)
 ```
 ![Imgur](https://i.imgur.com/58OCFgo.png)
 
