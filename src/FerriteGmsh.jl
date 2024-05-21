@@ -6,6 +6,7 @@ using Gmsh: Gmsh, gmsh
 
 # Compat for Ferrite before v1.0
 const FacetIndex = isdefined(Ferrite, :FacetIndex) ? Ferrite.FacetIndex : Ferrite.FaceIndex
+const facets     = isdefined(Ferrite, :facets)     ? Ferrite.facets     : Ferrite.faces
 
 const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
                               "Line 3" => Ferrite.QuadraticLine,
@@ -117,22 +118,27 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
-    faces = Ferrite.faces.(elements)
-    facesets = Dict{String,Set{FacetIndex}}()
-    for (boundaryname, boundaryfaces) in boundarydict
-        facesettuple = Set{FacetIndex}()
-        for boundaryface in boundaryfaces
-            for (eleidx, elefaces) in enumerate(faces)
-                if any(issubset.(elefaces, (boundaryface,)))
-                    localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
-                    push!(facesettuple, FacetIndex(eleidx, localface))
-                end
-            end
+function _add_to_facetsettuple!(facesettuple::Set{FacetIndex}, boundaryface::Tuple, facets)
+    for (eleidx, elefaces) in enumerate(facets)
+        if any(issubset.(elefaces, (boundaryface,)))
+            localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
+            push!(facesettuple, FacetIndex(eleidx, localface))
         end
-        facesets[boundaryname] = facesettuple
     end
-    return facesets
+    return facesettuple
+end
+
+function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
+    element_facets = facets.(elements)
+    facetsets = Dict{String,Set{FacetIndex}}()
+    for (boundaryname, boundaryfacets) in boundarydict
+        facetsettuple = Set{FacetIndex}()
+        for boundaryfacet in boundaryfacets
+            _add_to_facetsettuple!(facetsettuple, boundaryfacet, element_facets)
+        end
+        facetsets[boundaryname] = facetsettuple
+    end
+    return facetsets
 end
 
 function tocellsets(dim::Int, global_elementtags::Vector{Int})
