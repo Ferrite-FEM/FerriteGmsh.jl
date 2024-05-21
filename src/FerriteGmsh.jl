@@ -118,8 +118,8 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function _add_to_facetsettuple!(facesettuple::Set{FacetIndex}, boundaryface::Tuple, facets)
-    for (eleidx, elefaces) in enumerate(facets)
+function _add_to_facetsettuple!(facesettuple::Set{FacetIndex}, boundaryface::Tuple, element_facets)
+    for (eleidx, elefaces) in enumerate(element_facets)
         if any(issubset.(elefaces, (boundaryface,)))
             localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
             push!(facesettuple, FacetIndex(eleidx, localface))
