@@ -1,25 +1,29 @@
 module FerriteGmsh
 
-using Ferrite
+using Ferrite:
+    Ferrite, Grid, Node, Vec
 using Gmsh: Gmsh, gmsh
 
-const gmshtoferritecell = Dict("Line 2" => Line,
-                              "Line 3" => QuadraticLine,
-                              "Triangle 3" => Triangle,
-                              "Triangle 6" => QuadraticTriangle,
-                              "Quadrilateral 4" => Quadrilateral,
-                              "Quadrilateral 9" => QuadraticQuadrilateral,
-                              "Tetrahedron 4" => Tetrahedron,
-                              "Tetrahedron 10" => QuadraticTetrahedron,
-                              "Hexahedron 8" => Hexahedron,
-                              "Hexahedron 20" => Cell{3,20,6})
+# Compat for Ferrite before v1.0
+const FacetIndex = isdefined(Ferrite, :FacetIndex) ? Ferrite.FacetIndex : Ferrite.FaceIndex
+
+const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
+                              "Line 3" => Ferrite.QuadraticLine,
+                              "Triangle 3" => Ferrite.Triangle,
+                              "Triangle 6" => Ferrite.QuadraticTriangle,
+                              "Quadrilateral 4" => Ferrite.Quadrilateral,
+                              "Quadrilateral 9" => Ferrite.QuadraticQuadrilateral,
+                              "Tetrahedron 4" => Ferrite.Tetrahedron,
+                              "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
+                              "Hexahedron 8" => Ferrite.Hexahedron,
+                              "Hexahedron 20" => Ferrite.Cell{3,20,6})
 
 function translate_elements(original_elements)
     return original_elements
 end
 
-function translate_elements(original_elements::Vector{QuadraticTetrahedron})
-    ferrite_elements = QuadraticTetrahedron[]
+function translate_elements(original_elements::Vector{Ferrite.QuadraticTetrahedron})
+    ferrite_elements = Ferrite.QuadraticTetrahedron[]
     for original_ele in original_elements
         push!(ferrite_elements,QuadraticTetrahedron((original_ele.nodes[1], 
                                                      original_ele.nodes[2], 
@@ -35,10 +39,11 @@ function translate_elements(original_elements::Vector{QuadraticTetrahedron})
     return ferrite_elements
 end
 
-function translate_elements(original_elements::Vector{Cell{3,20,6}})
-    ferrite_elements = Cell{3,20,6}[]
+function translate_elements(original_elements::Vector{Ferrite.Cell{3,20,6}})
+    ferrite_elements = Ferrite.Cell{3,20,6}[]
     for original_ele in original_elements
-        push!(ferrite_elements,Cell{3,20,6}((original_ele.nodes[1], 
+        push!(ferrite_elements,Ferrite.Cell{3,20,6}((
+                                             original_ele.nodes[1], 
                                              original_ele.nodes[2], 
                                              original_ele.nodes[3], 
                                              original_ele.nodes[4],
@@ -112,16 +117,16 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function tofacesets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
+function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
     faces = Ferrite.faces.(elements)
-    facesets = Dict{String,Set{FaceIndex}}()
+    facesets = Dict{String,Set{FacetIndex}}()
     for (boundaryname, boundaryfaces) in boundarydict
-        facesettuple = Set{FaceIndex}()
+        facesettuple = Set{FacetIndex}()
         for boundaryface in boundaryfaces
             for (eleidx, elefaces) in enumerate(faces)
                 if any(issubset.(elefaces, (boundaryface,)))
                     localface = findfirst(x -> issubset(x,boundaryface), elefaces) 
-                    push!(facesettuple, FaceIndex(eleidx, localface))
+                    push!(facesettuple, FacetIndex(eleidx, localface))
                 end
             end
         end
@@ -204,15 +209,21 @@ function togrid(; domain="")
     end
 
     boundarydict = toboundary(facedim)
-    facesets = tofacesets(boundarydict, elements)
+    facetsets = tofacetsets(boundarydict, elements)
     # reset the save_all flag to the default value
     if !saveall_flag
         gmsh.option.setNumber("Mesh.SaveAll",0)
     end
-    return Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
+    @static if isdefined(Ferrite, :FacetIndex)
+        return Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
+    else # Compat for Ferrite before v1.0
+        return Grid(elements, nodes, facesets=facetsets, cellsets=cellsets)
+    end
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacesets, tocellsets, togrid
+export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid
+
+@deprecate tofacesets tofacetsets
 
 end
