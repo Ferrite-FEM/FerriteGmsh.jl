@@ -59,7 +59,7 @@ domaincellset = cellsets["Domain"]
 elements = elements[collect(domaincellset)]
 
 boundarydict = toboundary(facedim)
-facesets = tofacesets(boundarydict, elements)
+facesets = tofacetsets(boundarydict, elements)
 gmsh.finalize()
 
 Grid(elements, nodes, facesets=facesets, cellsets=cellsets)

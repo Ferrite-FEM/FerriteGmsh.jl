@@ -51,7 +51,7 @@
     nodes = tonodes()
     elements, gmsh_eleidx = toelements(2)
     boundarydict = toboundary(1)
-    facesets = tofacesets(boundarydict,elements)
+    facesets = tofacetsets(boundarydict,elements)
     cellsets = tocellsets(2,gmsh_eleidx)
     grid = Grid(elements,nodes,facesets=facesets,cellsets=cellsets)
     @test grid.facesets["bottom"] == Set([FaceIndex(15,1),FaceIndex(17,1)])

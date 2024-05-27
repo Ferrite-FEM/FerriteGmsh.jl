@@ -24,7 +24,7 @@ gmsh.model.mesh.generate(2)
 nodes = tonodes()
 elements, gmsh_eleidx = toelements(2)
 boundarydict = toboundary(1)
-faceset = tofacesets(boundarydict, elements)
+faceset = tofacetsets(boundarydict, elements)
 
 grid = Grid(elements,nodes,facesets=faceset)
 
