@@ -51,11 +51,15 @@
     nodes = tonodes()
     elements, gmsh_eleidx = toelements(2)
     boundarydict = toboundary(1)
-    facesets = tofacetsets(boundarydict,elements)
+    facetsets = tofacetsets(boundarydict,elements)
     cellsets = tocellsets(2,gmsh_eleidx)
-    grid = Grid(elements,nodes,facesets=facesets,cellsets=cellsets)
-    @test grid.facesets["bottom"] == Set([FaceIndex(15,1),FaceIndex(17,1)])
-    @test grid.facesets["top"] == Set([FaceIndex(3,3),FaceIndex(7,3)])
+    if FerriteV1
+        grid = Grid(elements,nodes,facetsets=facetsets,cellsets=cellsets)
+    else
+        grid = Grid(elements,nodes,facesets=facetsets,cellsets=cellsets)
+    end
+    @test getfacetset(grid, "bottom") == Set([FacetIndex(15,1),FacetIndex(17,1)])
+    @test getfacetset(grid, "top") == Set([FacetIndex(3,3),FacetIndex(7,3)])
     @test grid.cellsets["triangle"] == Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
     @test grid.cellsets["quad"] == Set([15,16,17,18])
     @test grid.nodes[12].x ≈ Vec{2}((0.0,1.0))

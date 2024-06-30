@@ -35,7 +35,11 @@
 
     # Convert the mesh to Ferrite Grid
     grid_bad = FerriteGmsh.togrid()
-    vtk_save(vtk_grid("grid_bad", grid_bad))
+    if FerriteV1
+        close(VTKFile("grid_bad", grid_bad))
+    else
+        vtk_save(vtk_grid("grid_bad", grid_bad))
+    end
 
     grid_good = mktempdir() do dir
         path = joinpath(dir, "mesh.msh")
