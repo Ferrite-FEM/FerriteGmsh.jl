@@ -8,6 +8,12 @@ using Gmsh: Gmsh, gmsh
 const FacetIndex = isdefined(Ferrite, :FacetIndex) ? Ferrite.FacetIndex : Ferrite.FaceIndex
 const facets     = isdefined(Ferrite, :facets)     ? Ferrite.facets     : Ferrite.faces
 
+if !isdefined(Ferrite, :SerendipityQuadraticHexahedron)
+    const SerendipityQuadraticHexahedron = Ferrite.Cell{3,20,6}
+else
+    const SerendipityQuadraticHexahedron = Ferrite.SerendipityQuadraticHexahedron
+end
+
 const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
                               "Line 3" => Ferrite.QuadraticLine,
                               "Triangle 3" => Ferrite.Triangle,
@@ -17,7 +23,7 @@ const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
                               "Tetrahedron 4" => Ferrite.Tetrahedron,
                               "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
                               "Hexahedron 8" => Ferrite.Hexahedron,
-                              "Hexahedron 20" => Ferrite.Cell{3,20,6})
+                              "Hexahedron 20" => SerendipityQuadraticHexahedron)
 
 function translate_elements(original_elements)
     return original_elements
@@ -40,10 +46,10 @@ function translate_elements(original_elements::Vector{Ferrite.QuadraticTetrahedr
     return ferrite_elements
 end
 
-function translate_elements(original_elements::Vector{Ferrite.Cell{3,20,6}})
-    ferrite_elements = Ferrite.Cell{3,20,6}[]
+function translate_elements(original_elements::Vector{SerendipityQuadraticHexahedron})
+    ferrite_elements = SerendipityQuadraticHexahedron[]
     for original_ele in original_elements
-        push!(ferrite_elements,Ferrite.Cell{3,20,6}((
+        push!(ferrite_elements, SerendipityQuadraticHexahedron((
                                              original_ele.nodes[1], 
                                              original_ele.nodes[2], 
                                              original_ele.nodes[3], 
