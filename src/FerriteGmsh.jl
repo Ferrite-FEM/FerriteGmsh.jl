@@ -149,6 +149,7 @@ end
 
 function tocellsets(dim::Int, global_elementtags::Vector{Int})
     cellsets = Dict{String,Set{Int}}()
+    element_to_cell_mapping = Dict(zip(global_elementtags, eachindex(global_elementtags)))
     physicalgroups = gmsh.model.getPhysicalGroups(dim)
     for (_, physicaltag) in physicalgroups 
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
@@ -159,7 +160,7 @@ function tocellsets(dim::Int, global_elementtags::Vector{Int})
             _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
             elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
             for ele in elementtags
-                push!(cellsetelements, findfirst(isequal(ele), global_elementtags))
+                push!(cellsetelements, element_to_cell_mapping[ele])
             end
             cellsets[name] = cellsetelements
         end
