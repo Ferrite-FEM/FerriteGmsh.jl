@@ -67,7 +67,7 @@ function tonodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
     return _create_nodes(Val(dim), nodes)
 end
-function _create_nodes(::Val{dim}, nodes) where Dim
+function _create_nodes(::Val{dim}, nodes) where dim
     return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)]
 end
 
