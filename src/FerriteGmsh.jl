@@ -67,8 +67,8 @@ function tonodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
     return _create_nodes(Val(dim), nodes)
 end
-function _create_nodes(::Val{Dim}, nodes) where Dim
-    return [Node(Vec{Dim}(nodes[i:i + (Dim - 1)])) for i in 1:3:length(nodes)]
+function _create_nodes(::Val{dim}, nodes) where Dim
+    return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)]
 end
 
 function toelements(dim::Int)
@@ -96,7 +96,7 @@ function toelements(dim::Int)
     return elements, reduce(vcat,convert(Vector{Vector{Int64}}, elementtags))
 end
 
-function _create_elements_gmsh(::Type{CT}, ::Val{N}, nodetags) where {CT <: Ferrite.AbstractCell, N, T}
+function _create_elements_gmsh(::Type{CT}, ::Val{N}, nodetags) where {CT <: Ferrite.AbstractCell, N}
     return [CT(NTuple{N, Int}(nodetags[i:i + (N - 1)])) for i in 1:N:length(nodetags)]
 end
 
