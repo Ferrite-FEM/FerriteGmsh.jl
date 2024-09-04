@@ -283,6 +283,8 @@ function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
     return entityset
 end
 
+tocellsets(dim::Int, global_entity_tags::Vector{Int}) = todimEntitysets(dim, global_entity_tags)
+
 """
     togrid(filename::String; domain="")
 
