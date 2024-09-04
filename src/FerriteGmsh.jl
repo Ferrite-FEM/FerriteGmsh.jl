@@ -192,7 +192,7 @@ end
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
-    return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)]
+    return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)], Int64.(nodeid)
 end
 
 function toelements(dim::Int)
@@ -235,7 +235,7 @@ function toboundary(dim::Int)
             append!(boundaryconnectivity, [Tuple(boundarynodetags[i:i + (numnodes - 1)]) for i in 1:numnodes:length(boundarynodetags)])
         end
         boundarydict[name] = boundaryconnectivity
-    end 
+    end
     return boundarydict
 end
 
@@ -262,25 +262,25 @@ function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferri
     return facetsets
 end
 
-function tocellsets(dim::Int, global_elementtags::Vector{Int})
-    cellsets = Dict{String,Set{Int}}()
-    element_to_cell_mapping = Dict(zip(global_elementtags, eachindex(global_elementtags)))
+function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
+    entityset = Dict{String,Set{Int}}()
+    gmsh_to_ferrite_mapping = Dict(zip(global_entity_tags, eachindex(global_entity_tags)))
     physicalgroups = gmsh.model.getPhysicalGroups(dim)
     for (_, physicaltag) in physicalgroups 
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
         isempty(gmshname) ? (name = "$physicaltag") : (name = gmshname)
         entities = gmsh.model.getEntitiesForPhysicalGroup(dim,physicaltag)
-        cellsetelements = Set{Int}()
+        ferrite_entities = Set{Int}()
         for entity in entities
             _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
             elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
             for ele in elementtags
-                push!(cellsetelements, element_to_cell_mapping[ele])
+                push!(ferrite_entities, gmsh_to_ferrite_mapping[ele])
             end
-            cellsets[name] = cellsetelements
+            entityset[name] = ferrite_entities
         end
     end
-    return cellsets
+    return entityset
 end
 
 """
@@ -327,9 +327,10 @@ function togrid(; domain="")
     end
     gmsh.model.mesh.renumberNodes()
     gmsh.model.mesh.renumberElements()
-    nodes = tonodes()
+    nodes, gmsh_nodeidx = tonodes()
+    nodesets = todimEntitysets(0, gmsh_nodeidx)
     elements, gmsh_elementidx = toelements(dim) 
-    cellsets = tocellsets(dim, gmsh_elementidx)
+    cellsets = todimEntitysets(dim, gmsh_elementidx)
 
     if !isempty(domain)
         domaincellset = cellsets[domain]
@@ -343,9 +344,9 @@ function togrid(; domain="")
         gmsh.option.setNumber("Mesh.SaveAll",0)
     end
     @static if isdefined(Ferrite, :FacetIndex)
-        return Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
+        return Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets, nodesets=nodesets)
     else # Compat for Ferrite before v1.0
-        return Grid(elements, nodes, facesets=facetsets, cellsets=cellsets)
+        return Grid(elements, nodes, facesets=facetsets, cellsets=cellsets, nodesets=nodesets)
     end
 end
 
