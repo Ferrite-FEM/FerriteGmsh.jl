@@ -22,4 +22,15 @@ using FerriteGmsh, Gmsh
     grid = togrid()
     @test length(grid.cells) > 0 # smoke test...
     @test Bool(gmsh.isInitialized()) # Test that FerriteGmsh didn't finalize
+    
+    # gmsh.clear()
+    gmsh.model.occ.addBox(0,0,0, 1,1,1, 1) # Smoke test to se eif it crashes
+    gmsh.model.geo.synchronize()
+    gmsh.model.mesh.generate()
+    grid = togrid()
+    @test length(grid.cells) > 0 # smoke test...
+    @test Bool(gmsh.isInitialized()) # Test that FerriteGmsh didn't finalize
+
+    gmsh.finalize()
+    @test !Bool(gmsh.isInitialized()) # Test that gmsh could shutdown
 end
