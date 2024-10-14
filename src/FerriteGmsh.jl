@@ -10,8 +10,10 @@ const facets     = isdefined(Ferrite, :facets)     ? Ferrite.facets     : Ferrit
 
 if !isdefined(Ferrite, :SerendipityQuadraticHexahedron)
     const SerendipityQuadraticHexahedron = Ferrite.Cell{3,20,6}
+    const QuadraticHexahedron = Ferrite.Cell{3,27,6}
 else
     const SerendipityQuadraticHexahedron = Ferrite.SerendipityQuadraticHexahedron
+    const QuadraticHexahedron = Ferrite.QuadraticHexahedron
 end
 
 const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
@@ -23,7 +25,8 @@ const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
                               "Tetrahedron 4" => Ferrite.Tetrahedron,
                               "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
                               "Hexahedron 8" => Ferrite.Hexahedron,
-                              "Hexahedron 20" => SerendipityQuadraticHexahedron)
+                              "Hexahedron 20" => SerendipityQuadraticHexahedron,
+                              "Hexahedron 27"=> QuadraticHexahedron)
 
 function translate_elements(original_elements)
     return original_elements
@@ -46,6 +49,44 @@ function translate_elements(original_elements::Vector{Ferrite.QuadraticTetrahedr
     return ferrite_elements
 end
 
+#
+#  y
+#
+#  ^
+#  |
+#  |
+#  +--- > x
+#  \\
+#   \\
+#    \\
+#     z
+#
+#     GMSH
+# 4----14----3
+# |\         |\
+# |16        | 15
+# 10 \       12 \
+# |   8----20+---7
+# |   |      |   |
+# 1---+-9----2   |
+#  \ 18       \  19
+#  11 |        13|
+#    \|         \|
+#     5----17----6
+#
+#    Ferrite
+# 4----11----3
+# |\         |\
+# |20        | 19
+# 12 \       10 \
+# |   8----15+---7
+# |   |      |   |
+# 1---+-9----2   |
+#  \ 16       \  14
+#  17 |        18|
+#    \|         \|
+#     5----13----6
+#
 function translate_elements(original_elements::Vector{SerendipityQuadraticHexahedron})
     ferrite_elements = SerendipityQuadraticHexahedron[]
     for original_ele in original_elements
@@ -58,7 +99,7 @@ function translate_elements(original_elements::Vector{SerendipityQuadraticHexahe
                                              original_ele.nodes[6], 
                                              original_ele.nodes[7], 
                                              original_ele.nodes[8],
-                                             original_ele.nodes[9],
+                                             original_ele.nodes[9],  # edges
                                              original_ele.nodes[12],
                                              original_ele.nodes[14],
                                              original_ele.nodes[10],
@@ -70,6 +111,80 @@ function translate_elements(original_elements::Vector{SerendipityQuadraticHexahe
                                              original_ele.nodes[13],
                                              original_ele.nodes[15],
                                              original_ele.nodes[16])),)
+    end
+    return ferrite_elements
+end
+
+
+#  y
+#
+#  ^
+#  |
+#  |
+#  +--- > x
+#  \\
+#   \\
+#    \\
+#     z
+#
+#     GMSH
+# 4----14----3
+# |\         |\
+# |16    25  | 15
+# 10 \ 21    12 \
+# |   8----20+---7
+# |23 |  27  | 24|
+# 1---+-9----2   |
+#  \ 18    26 \  19
+#  11 |  22    13|
+#    \|         \|
+#     5----17----6
+#
+#    Ferrite
+# 4----11----3
+# |\         |\
+# |20    24  | 19
+# 12 \ 21    10 \
+# |   8----15+---7
+# |25 |  27  | 23|
+# 1---+-9----2   |
+#  \ 16     26\  14
+#  17 |  22    18|
+#    \|         \|
+#     5----13----6
+#
+function translate_elements(original_elements::Vector{QuadraticHexahedron})
+    ferrite_elements = QuadraticHexahedron[]
+    for original_ele in original_elements
+        push!(ferrite_elements,QuadraticHexahedron((
+                                             original_ele.nodes[1], 
+                                             original_ele.nodes[2], 
+                                             original_ele.nodes[3], 
+                                             original_ele.nodes[4],
+                                             original_ele.nodes[5],  
+                                             original_ele.nodes[6], 
+                                             original_ele.nodes[7], 
+                                             original_ele.nodes[8],
+                                             original_ele.nodes[9], # edge
+                                             original_ele.nodes[12],
+                                             original_ele.nodes[14],
+                                             original_ele.nodes[10],
+                                             original_ele.nodes[17],
+                                             original_ele.nodes[19],
+                                             original_ele.nodes[20],
+                                             original_ele.nodes[18],
+                                             original_ele.nodes[11],
+                                             original_ele.nodes[13],
+                                             original_ele.nodes[15],
+                                             original_ele.nodes[16],
+                                             original_ele.nodes[21], # face
+                                             original_ele.nodes[22],
+                                             original_ele.nodes[24],
+                                             original_ele.nodes[25],
+                                             original_ele.nodes[23],
+                                             original_ele.nodes[26],
+                                             original_ele.nodes[27],
+                                             )),)
     end
     return ferrite_elements
 end 
