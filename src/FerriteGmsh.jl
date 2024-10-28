@@ -262,6 +262,9 @@ function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferri
     return facetsets
 end
 
+getMeshEntity(::Val{0}, entity) = [gmsh.model.mesh.getNodes(0, entity)[1]]
+getMeshEntity(::Val{T}, entity) where T = gmsh.model.mesh.getElements(T, entity)[2]
+
 function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
     entityset = Dict{String,Set{Int}}()
     gmsh_to_ferrite_mapping = Dict(zip(global_entity_tags, eachindex(global_entity_tags)))
@@ -272,7 +275,7 @@ function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
         entities = gmsh.model.getEntitiesForPhysicalGroup(dim,physicaltag)
         ferrite_entities = Set{Int}()
         for entity in entities
-            _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
+            elementtags = getMeshEntity(Val(dim), entity)
             elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
             for ele in elementtags
                 push!(ferrite_entities, gmsh_to_ferrite_mapping[ele])
