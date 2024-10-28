@@ -287,6 +287,7 @@ function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
 end
 
 tocellsets(dim::Int, global_entity_tags::Vector{Int}) = todimEntitysets(dim, global_entity_tags)
+tonodesets(global_entity_tags::Vector{Int}) = todimEntitysets(0, global_entity_tags)
 
 """
     togrid(filename::String; domain="")
@@ -356,7 +357,7 @@ function togrid(; domain="")
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid
+export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid, tonodesets
 
 @deprecate tofacesets tofacetsets
 
