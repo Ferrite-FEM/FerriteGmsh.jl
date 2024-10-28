@@ -239,28 +239,31 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function _add_to_facetsettuple!(facetsettuple::Set{FacetIndex}, boundaryfacet::Tuple, element_facets)
-    for (eleidx, elefacets) in enumerate(element_facets)
+function _add_to_boundarysettuple!(boundarsettuple::Set{IndexType}, boundaryfacet::Tuple, element_boundaries) where IndexType
+    for (eleidx, elefacets) in enumerate(element_boundaries)
         if any(issubset.(elefacets, (boundaryfacet,)))
             localfacet = findfirst(x -> issubset(x,boundaryfacet), elefacets) 
-            push!(facetsettuple, FacetIndex(eleidx, localfacet))
+            push!(boundarsettuple, IndexType(eleidx, localfacet))
         end
     end
-    return facetsettuple
+    return boundarsettuple
 end
 
-function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
-    element_facets = facets.(elements)
-    facetsets = Dict{String,Set{FacetIndex}}()
-    for (boundaryname, boundaryfacets) in boundarydict
-        facetsettuple = Set{FacetIndex}()
-        for boundaryfacet in boundaryfacets
-            _add_to_facetsettuple!(facetsettuple, boundaryfacet, element_facets)
+function boundary_to_setdefinition(::Val{IndexType}, boundarydict::Dict{String,Vector}, element_boundaries) where IndexType
+    boundarySet = Dict{String,Set{IndexType}}()
+    for (boundaryname, boundaryentities) in boundarydict
+        boundarysettuple = Set{IndexType}()
+        for boundaryentity in boundaryentities
+            _add_to_boundarysettuple!(boundarysettuple, boundaryentity, element_boundaries)
         end
-        facetsets[boundaryname] = facetsettuple
+        boundarySet[boundaryname] = boundarysettuple
     end
-    return facetsets
+    return boundarySet
 end
+
+tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(FacetIndex), boundarydict, (facets(e) for e in  elements))
+toedgetsets(elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(Ferrite.EdgeIndex), toboundary(1), (Ferrite.edges(e) for e in elements))
+toedgetsets(grid::Grid) = toedgetsets(Ferrite.getcells(grid))
 
 getMeshEntity(::Val{0}, entity) = [gmsh.model.mesh.getNodes(0, entity)[1]]
 getMeshEntity(::Val{T}, entity) where T = gmsh.model.mesh.getElements(T, entity)[2]
@@ -357,7 +360,7 @@ function togrid(; domain="")
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid, tonodesets
+export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid, tonodesets, toedgetsets
 
 @deprecate tofacesets tofacetsets
 

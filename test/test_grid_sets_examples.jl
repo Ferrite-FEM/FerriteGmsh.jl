@@ -233,5 +233,39 @@ end
 
         Gmsh.finalize()
     end
+    @testset "Edgeset" begin
+        dim = 3
+        Gmsh.finalize()
+        Gmsh.initialize()
 
+        # Box with an edge in the middle of the top face
+
+        box = gmsh.model.occ.addBox(0,0,0,10,10,10)
+
+        p1 = gmsh.model.occ.addPoint(5.0, 10.0, 0.0)
+        p2 = gmsh.model.occ.addPoint(5.0, 10.0, 10.0)
+        line = gmsh.model.occ.addLine(p1, p2)
+
+        _, res = gmsh.model.occ.fragment([(3, box)],[(1, line)])
+        new_line = res[findfirst(x->x[1][1]==1, res)][1][2]
+
+        gmsh.model.occ.synchronize()
+
+        gmsh.model.addPhysicalGroup(1, [new_line], 1, "top mid edge")
+
+        gmsh.model.mesh.generate(3)
+
+        grid=togrid()
+        edgesets = toedgetsets(grid)
+
+        @test "top mid edge" in keys(edgesets)
+
+        edge_coordinates = [get_node_coordinate(grid, node_id) for fidx in edgesets["top mid edge"] for node_id in Ferrite.edges(getcells(grid, fidx[1]))[fidx[2]]]
+        x_ex, y_ex, z_ex = extrema(getindex.(edge_coordinates,1)), extrema(getindex.(edge_coordinates,2)), extrema(getindex.(edge_coordinates,3))
+        @test abs(-(x_ex...)) ≈ 0.0
+        @test abs(-(y_ex...)) ≈ 0.0
+        @test abs(-(z_ex...)) ≈ 10.0
+
+        Gmsh.finalize()
+    end
 end
