@@ -50,9 +50,10 @@ gmsh.model.mesh.renumberNodes()
 gmsh.model.mesh.renumberElements()
 
 # transfer the gmsh information
-nodes = tonodes()
+nodes, gmsh_nodeidx = tonodes()
 elements, gmsh_elementidx = toelements(dim)
 cellsets = tocellsets(dim, gmsh_elementidx)
+nodesets = tonodesets(gmsh_nodeidx)
 
 # "Domain" is the name of a PhysicalGroup and saves all cells that define the computational domain
 domaincellset = cellsets["Domain"]
@@ -60,9 +61,13 @@ elements = elements[collect(domaincellset)]
 
 boundarydict = toboundary(facedim)
 facesets = tofacetsets(boundarydict, elements)
+
+# Edge sets (physical groups of dimension 1) must be saved separately as they are not stored in Ferrite's grid defintion.
+edgesets = toedgetsets(elements)
+
 gmsh.finalize()
 
-Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
+Grid(elements, nodes, facesets=facesets, cellsets=cellsets, nodesets=nodesets)
 ```
 
 ## Elements numbering & Supported elements

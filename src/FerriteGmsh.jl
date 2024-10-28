@@ -192,7 +192,7 @@ end
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
-    return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)]
+    return [Node(Vec{dim}(nodes[i:i + (dim - 1)])) for i in 1:3:length(nodes)], Int64.(nodeid)
 end
 
 function toelements(dim::Int)
@@ -235,53 +235,85 @@ function toboundary(dim::Int)
             append!(boundaryconnectivity, [Tuple(boundarynodetags[i:i + (numnodes - 1)]) for i in 1:numnodes:length(boundarynodetags)])
         end
         boundarydict[name] = boundaryconnectivity
-    end 
+    end
     return boundarydict
 end
 
-function _add_to_facetsettuple!(facetsettuple::Set{FacetIndex}, boundaryfacet::Tuple, element_facets)
-    for (eleidx, elefacets) in enumerate(element_facets)
+function _add_to_boundarysettuple!(boundarsettuple::Set{IndexType}, boundaryfacet::Tuple, element_boundaries) where IndexType
+    for (eleidx, elefacets) in enumerate(element_boundaries)
         if any(issubset.(elefacets, (boundaryfacet,)))
             localfacet = findfirst(x -> issubset(x,boundaryfacet), elefacets) 
-            push!(facetsettuple, FacetIndex(eleidx, localfacet))
+            push!(boundarsettuple, IndexType(eleidx, localfacet))
         end
     end
-    return facetsettuple
+    return boundarsettuple
 end
 
-function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
-    element_facets = facets.(elements)
-    facetsets = Dict{String,Set{FacetIndex}}()
-    for (boundaryname, boundaryfacets) in boundarydict
-        facetsettuple = Set{FacetIndex}()
-        for boundaryfacet in boundaryfacets
-            _add_to_facetsettuple!(facetsettuple, boundaryfacet, element_facets)
+function boundary_to_setdefinition(::Val{IndexType}, boundarydict::Dict{String,Vector}, element_boundaries) where IndexType
+    boundarySet = Dict{String,Set{IndexType}}()
+    for (boundaryname, boundaryentities) in boundarydict
+        boundarysettuple = Set{IndexType}()
+        for boundaryentity in boundaryentities
+            _add_to_boundarysettuple!(boundarysettuple, boundaryentity, element_boundaries)
         end
-        facetsets[boundaryname] = facetsettuple
+        boundarySet[boundaryname] = boundarysettuple
     end
-    return facetsets
+    return boundarySet
 end
 
-function tocellsets(dim::Int, global_elementtags::Vector{Int})
-    cellsets = Dict{String,Set{Int}}()
-    element_to_cell_mapping = Dict(zip(global_elementtags, eachindex(global_elementtags)))
+tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(FacetIndex), boundarydict, (facets(e) for e in  elements))
+
+"""
+    toedgeset(elements::Vector{<:Ferrite.AbstractCell})
+    toedgeset(grid::Grid)
+
+Generate a dictionary of edge sets (Set{Ferrite.EdgeIndex}), i.e., physical groups of dim=1, using the element definitions in `elements` or `grid`.
+Ferrite does not store edge sets in the grid, but they can be used to define boundary conditions.
+
+The function `toedgeset` reguires that the GMSH model has not been finalized.
+Therefore, when using [`togrid`](@ref), `Gmsh.initialize()` must be called before `togrid` to bypass the automatic initialization and finalization of the GMSH model.
+
+*Examples*
+```jldoctest
+using FerriteGmsh
+
+gmsh.initialize()
+grid = togrid("meshfile.msh")
+edgesets = toedgeset(grid)
+gmsh.finalize()
+
+edgesets = toedgeset(grid) # Errors as gmsh has not been initialized
+```
+"""
+toedgetsets(elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(Ferrite.EdgeIndex), toboundary(1), (Ferrite.edges(e) for e in elements))
+toedgetsets(grid::Grid) = toedgetsets(Ferrite.getcells(grid))
+
+getMeshEntity(::Val{0}, entity) = [gmsh.model.mesh.getNodes(0, entity)[1]]
+getMeshEntity(::Val{T}, entity) where T = gmsh.model.mesh.getElements(T, entity)[2]
+
+function todimEntitysets(dim::Int, global_entity_tags::Vector{Int})
+    entityset = Dict{String,Set{Int}}()
+    gmsh_to_ferrite_mapping = Dict(zip(global_entity_tags, eachindex(global_entity_tags)))
     physicalgroups = gmsh.model.getPhysicalGroups(dim)
     for (_, physicaltag) in physicalgroups 
         gmshname = gmsh.model.getPhysicalName(dim, physicaltag)
         isempty(gmshname) ? (name = "$physicaltag") : (name = gmshname)
         entities = gmsh.model.getEntitiesForPhysicalGroup(dim,physicaltag)
-        cellsetelements = Set{Int}()
+        ferrite_entities = Set{Int}()
         for entity in entities
-            _, elementtags, _= gmsh.model.mesh.getElements(dim, entity)
+            elementtags = getMeshEntity(Val(dim), entity)
             elementtags = reduce(vcat,elementtags) |> x-> convert(Vector{Int},x)
             for ele in elementtags
-                push!(cellsetelements, element_to_cell_mapping[ele])
+                push!(ferrite_entities, gmsh_to_ferrite_mapping[ele])
             end
-            cellsets[name] = cellsetelements
+            entityset[name] = ferrite_entities
         end
     end
-    return cellsets
+    return entityset
 end
+
+tocellsets(dim::Int, global_entity_tags::Vector{Int}) = todimEntitysets(dim, global_entity_tags)
+tonodesets(global_entity_tags::Vector{Int}) = todimEntitysets(0, global_entity_tags)
 
 """
     togrid(filename::String; domain="")
@@ -327,9 +359,10 @@ function togrid(; domain="")
     end
     gmsh.model.mesh.renumberNodes()
     gmsh.model.mesh.renumberElements()
-    nodes = tonodes()
+    nodes, gmsh_nodeidx = tonodes()
+    nodesets = todimEntitysets(0, gmsh_nodeidx)
     elements, gmsh_elementidx = toelements(dim) 
-    cellsets = tocellsets(dim, gmsh_elementidx)
+    cellsets = todimEntitysets(dim, gmsh_elementidx)
 
     if !isempty(domain)
         domaincellset = cellsets[domain]
@@ -343,14 +376,14 @@ function togrid(; domain="")
         gmsh.option.setNumber("Mesh.SaveAll",0)
     end
     @static if isdefined(Ferrite, :FacetIndex)
-        return Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
+        return Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets, nodesets=nodesets)
     else # Compat for Ferrite before v1.0
-        return Grid(elements, nodes, facesets=facetsets, cellsets=cellsets)
+        return Grid(elements, nodes, facesets=facetsets, cellsets=cellsets, nodesets=nodesets)
     end
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid
+export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid, tonodesets, toedgetsets
 
 @deprecate tofacesets tofacetsets
 

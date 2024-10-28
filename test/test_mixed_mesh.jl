@@ -48,7 +48,7 @@
     gmsh.model.geo.synchronize()
     gmsh.model.mesh.generate(2)
 
-    nodes = tonodes()
+    nodes,_ = tonodes()
     elements, gmsh_eleidx = toelements(2)
     boundarydict = toboundary(1)
     facetsets = tofacetsets(boundarydict,elements)
