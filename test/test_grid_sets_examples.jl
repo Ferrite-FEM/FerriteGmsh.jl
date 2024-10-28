@@ -25,11 +25,11 @@ function generate_sample_data(dim)
             bb = gmsh.model.getBoundingBox(dim, face)
             close_to_min = isapprox.(bb,0.0,atol=1e-6)
             close_to_max = isapprox.(bb,10.0,atol=1e-6)
-            if !any(close_to_min .|| close_to_max) ## inner surface
+            if !any(close_to_min .| close_to_max) ## inner surface
                 gmsh.model.addPhysicalGroup(dim, [face], i, "inner surface")
                 continue
             end
-            zero_axis = (close_to_min[1:3] .&& close_to_min[4:end]) .|| (close_to_max[1:3] .&& close_to_max[4:end])
+            zero_axis = (close_to_min[1:3] .& close_to_min[4:end]) .| (close_to_max[1:3] .& close_to_max[4:end])
             if zero_axis[1]
                 if close_to_min[1]
                     gmsh.model.addPhysicalGroup(dim, [face], i, "left")
@@ -73,11 +73,11 @@ function generate_sample_data(dim)
             bb = gmsh.model.getBoundingBox(dim, face)[[1,2,4,5]]
             close_to_min = isapprox.(bb,0.0,atol=1e-6)
             close_to_max = isapprox.(bb,10.0,atol=1e-6)
-            if !any(close_to_min .|| close_to_max) ## inner surface
+            if !any(close_to_min .| close_to_max) ## inner surface
                 gmsh.model.addPhysicalGroup(dim, [face], i, "circular edge")
                 continue
             end
-            zero_axis = (close_to_min[1:2] .&& close_to_min[3:end]) .|| (close_to_max[1:2] .&& close_to_max[3:end])
+            zero_axis = (close_to_min[1:2] .& close_to_min[3:end]) .| (close_to_max[1:2] .& close_to_max[3:end])
             if zero_axis[1]
                 if close_to_min[1]
                     gmsh.model.addPhysicalGroup(dim, [face], i, "left")
