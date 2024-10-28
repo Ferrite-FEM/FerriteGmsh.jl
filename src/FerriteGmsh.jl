@@ -262,6 +262,29 @@ function boundary_to_setdefinition(::Val{IndexType}, boundarydict::Dict{String,V
 end
 
 tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(FacetIndex), boundarydict, (facets(e) for e in  elements))
+
+"""
+    toedgeset(elements::Vector{<:Ferrite.AbstractCell})
+    toedgeset(grid::Grid)
+
+Generate a dictionary of edge sets (Set{Ferrite.EdgeIndex}), i.e., physical groups of dim=1, using the element definitions in `elements` or `grid`.
+Ferrite does not store edge sets in the grid, but they can be used to define boundary conditions.
+
+The function `toedgeset` reguires that the GMSH model has not been finalized.
+Therefore, when using [`togrid`](@ref), `Gmsh.initialize()` must be called before `togrid` to bypass the automatic initialization and finalization of the GMSH model.
+
+*Examples*
+```jldoctest
+using FerriteGmsh
+
+gmsh.initialize()
+grid = togrid("meshfile.msh")
+edgesets = toedgeset(grid)
+gmsh.finalize()
+
+edgesets = toedgeset(grid) # Errors as gmsh has not been initialized
+```
+"""
 toedgetsets(elements::Vector{<:Ferrite.AbstractCell}) = boundary_to_setdefinition(Val(Ferrite.EdgeIndex), toboundary(1), (Ferrite.edges(e) for e in elements))
 toedgetsets(grid::Grid) = toedgetsets(Ferrite.getcells(grid))
 
