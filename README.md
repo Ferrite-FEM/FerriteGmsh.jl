@@ -62,8 +62,7 @@ elements = elements[collect(domaincellset)]
 boundarydict = toboundary(facedim)
 facesets = tofacetsets(boundarydict, elements)
 
-# As edge sets are not stored in Ferrite's grid defintion, physical groups of dimension 1
-# can be extracted to a separate edge set dictionary.
+# Edge sets (physical groups of dimension 1) must be saved separately as they are not stored in Ferrite's grid defintion.
 edgesets = toedgetsets(elements)
 
 gmsh.finalize()
