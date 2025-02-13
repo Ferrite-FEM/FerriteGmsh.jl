@@ -9,9 +9,11 @@ const FacetIndex = isdefined(Ferrite, :FacetIndex) ? Ferrite.FacetIndex : Ferrit
 const facets     = isdefined(Ferrite, :facets)     ? Ferrite.facets     : Ferrite.faces
 
 if !isdefined(Ferrite, :SerendipityQuadraticHexahedron)
+    const SerendipityQuadraticQuadrilateral = Ferrite.Cell{2,8,4}
     const SerendipityQuadraticHexahedron = Ferrite.Cell{3,20,6}
     const QuadraticHexahedron = Ferrite.Cell{3,27,6}
 else
+    const SerendipityQuadraticQuadrilateral = Ferrite.SerendipityQuadraticQuadrilateral
     const SerendipityQuadraticHexahedron = Ferrite.SerendipityQuadraticHexahedron
     const QuadraticHexahedron = Ferrite.QuadraticHexahedron
 end
@@ -21,7 +23,7 @@ const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
                               "Triangle 3" => Ferrite.Triangle,
                               "Triangle 6" => Ferrite.QuadraticTriangle,
                               "Quadrilateral 4" => Ferrite.Quadrilateral,
-                              "Quadrilateral 8" => Ferrite.SerendipityQuadraticQuadrilateral,
+                              "Quadrilateral 8" => SerendipityQuadraticQuadrilateral,
                               "Quadrilateral 9" => Ferrite.QuadraticQuadrilateral,
                               "Tetrahedron 4" => Ferrite.Tetrahedron,
                               "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
