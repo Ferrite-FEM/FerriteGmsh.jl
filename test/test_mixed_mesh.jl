@@ -53,11 +53,7 @@
     boundarydict = toboundary(1)
     facetsets = tofacetsets(boundarydict,elements)
     cellsets = tocellsets(2,gmsh_eleidx)
-    if FerriteV1
-        grid = Grid(elements,nodes,facetsets=facetsets,cellsets=cellsets)
-    else
-        grid = Grid(elements,nodes,facesets=facetsets,cellsets=cellsets)
-    end
+    grid = Grid(elements,nodes,facetsets=facetsets,cellsets=cellsets)
     @test getfacetset(grid, "bottom") == Set([FacetIndex(15,1),FacetIndex(17,1)])
     @test getfacetset(grid, "top") == Set([FacetIndex(3,3),FacetIndex(7,3)])
     @test grid.cellsets["triangle"] == Set([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
