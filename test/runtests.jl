@@ -18,4 +18,6 @@ include("test_multiple_entities_group.jl")
 include("test_togrid.jl")
 include("test_saveall_flag.jl")
 
+include("test_fixordering.jl")
+
 @test_throws SystemError togrid("this-file-does-not-exist.msh")
