@@ -64,7 +64,7 @@ facetsets = tofacetsets(boundarydict, elements)
 gmsh.finalize()
 
 using Ferrite
-Grid(elements, nodes, facetsets=facesets, cellsets=cellsets)
+Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
 ```
 
 ## Elements numbering & Supported elements
