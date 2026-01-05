@@ -38,10 +38,11 @@ while the latter is done by
 using FerriteGmsh
 
 gmsh.initialize()
-dim = Int64(gmsh.model.getDimension())
-facedim = dim - 1
 
 # do stuff to describe your gmsh model
+
+dim = Int64(gmsh.model.getDimension())
+facedim = dim - 1
 
 # renumber the gmsh entities, such that the final used entities start by index 1
 # this step is crucial, because Ferrite.jl uses the implicit entity index based on an array index
@@ -59,10 +60,11 @@ domaincellset = cellsets["Domain"]
 elements = elements[collect(domaincellset)]
 
 boundarydict = toboundary(facedim)
-facesets = tofacetsets(boundarydict, elements)
+facetsets = tofacetsets(boundarydict, elements)
 gmsh.finalize()
 
-Grid(elements, nodes, facesets=facesets, cellsets=cellsets)
+using Ferrite
+Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
 ```
 
 ## Elements numbering & Supported elements
