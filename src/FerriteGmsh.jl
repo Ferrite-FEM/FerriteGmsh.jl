@@ -349,6 +349,8 @@ function togrid(; domain="")
     end
 end
 
+include("fix_ordering.jl")
+
 export gmsh
 export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid
 
