@@ -53,6 +53,9 @@ gmsh.model.mesh.renumberElements()
 # transfer the gmsh information
 nodes = tonodes()
 elements, gmsh_elementidx = toelements(dim)
+# repair cells that Gmsh emitted with the opposite orientation; must happen before
+# `tofacetsets` below, because flipping a cell renumbers its local facets
+reorient!(elements, nodes)
 cellsets = tocellsets(dim, gmsh_elementidx)
 
 # "Domain" is the name of a PhysicalGroup and saves all cells that define the computational domain
@@ -133,3 +136,7 @@ All 14 cell types that `Ferrite` defines are supported:
 `Wedge`, `Pyramid` and `SerendipityQuadraticQuadrilateral` require Ferrite v1.
 
 Gmsh element types that are not in this table -- the higher order variants such as `Triangle 10`, `Tetrahedron 20`, `Prism 18` or `Pyramid 14` -- have no counterpart in `Ferrite`, which only provides first and second order cells. Meshes containing them raise an error naming the offending element type; re-mesh with `gmsh.model.mesh.setOrder(1)` or `setOrder(2)`.
+
+### Element orientation
+
+Gmsh numbers the nodes of an element following the orientation of the entity it belongs to, so a surface whose normal points along `-z` produces clockwise elements while `Ferrite` requires a positive Jacobian determinant. `togrid` detects such cells and relabels them with `reorient!`, which keeps a cell on exactly the same physical region and only reverses its orientation. Correctly oriented cells are left untouched, so `ReverseMesh Surface{...};` in the `.geo` file is no longer needed.

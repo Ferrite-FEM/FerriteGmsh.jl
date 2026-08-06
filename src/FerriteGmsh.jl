@@ -120,6 +120,98 @@ function _tocells(::Type{CellType}, nodetags::Vector{Int64}, perm::NTuple{N,Int}
     return [CellType(ntuple(j -> nodetags[i + perm[j] - 1], Val(N))) for i in 1:N:length(nodetags)]
 end
 
+"""
+    cellorientation::Dict{DataType,Tuple{Tuple,Tuple}}
+
+For each supported cell type, the pair `(simplex, flip)` used by [`reorient!`](@ref) to
+detect and repair cells that Gmsh emitted with the opposite orientation.
+
+`simplex` are `refdim + 1` local node indices spanning a *positively* oriented simplex of
+the reference element. Taking the same determinant over the physical nodes therefore
+yields the sign of `det(J)` at that corner of the cell.
+
+`flip` is the relabelling induced by an orientation reversing symmetry `R` of the
+reference element -- swapping the first two reference coordinates, or negating the
+coordinate of a line. Relabelling a cell this way leaves it on exactly the same physical
+region and only flips the sign of `det(J)`: for a nodal basis the geometric mapping turns
+from `phi(xi)` into `phi(R(xi))`. Being induced by a reflection, `flip` is an involution.
+
+`test/test_orientation.jl` rederives both entries of every cell type from
+`Ferrite.reference_coordinates`.
+"""
+const cellorientation = Dict{DataType,Tuple{Tuple,Tuple}}()
+
+for (gmshname, simplex, flip) in (
+        ("Line 2", (1, 2), (2, 1)),
+        ("Line 3", (1, 2), (2, 1, 3)),
+        ("Triangle 3", (1, 2, 3), (2, 1, 3)),
+        ("Triangle 6", (1, 2, 3), (2, 1, 3, 4, 6, 5)),
+        ("Quadrilateral 4", (1, 2, 3), (1, 4, 3, 2)),
+        ("Quadrilateral 8", (1, 2, 3), (1, 4, 3, 2, 8, 7, 6, 5)),
+        ("Quadrilateral 9", (1, 2, 3), (1, 4, 3, 2, 8, 7, 6, 5, 9)),
+        ("Tetrahedron 4", (1, 2, 3, 4), (1, 3, 2, 4)),
+        ("Tetrahedron 10", (1, 2, 3, 4), (1, 3, 2, 4, 7, 6, 5, 8, 10, 9)),
+        ("Hexahedron 8", (1, 2, 4, 5), (1, 4, 3, 2, 5, 8, 7, 6)),
+        ("Hexahedron 20", (1, 2, 4, 5),
+            (1, 4, 3, 2, 5, 8, 7, 6, 12, 11, 10, 9, 16, 15, 14, 13, 17, 20, 19, 18)),
+        ("Hexahedron 27", (1, 2, 4, 5),
+            (1, 4, 3, 2, 5, 8, 7, 6, 12, 11, 10, 9, 16, 15, 14, 13, 17, 20, 19, 18,
+             21, 25, 24, 23, 22, 26, 27)),
+        ("Prism 6", (1, 2, 3, 4), (1, 3, 2, 4, 6, 5)),
+        ("Pyramid 5", (1, 2, 3, 5), (1, 3, 2, 4, 5)),
+    )
+    haskey(gmshtoferritecell, gmshname) &&
+        (cellorientation[gmshtoferritecell[gmshname]] = (simplex, flip))
+end
+
+_det(e::Tuple{Vec{1,T}}) where {T} = e[1][1]
+_det(e::Tuple{Vec{2,T},Vec{2,T}}) where {T} = e[1][1] * e[2][2] - e[1][2] * e[2][1]
+function _det(e::Tuple{Vec{3,T},Vec{3,T},Vec{3,T}}) where {T}
+    a, b, c = e
+    return a[1] * (b[2] * c[3] - b[3] * c[2]) -
+           a[2] * (b[1] * c[3] - b[3] * c[1]) +
+           a[3] * (b[1] * c[2] - b[2] * c[1])
+end
+
+# Function barriers: `simplex` and `flip` come out of an abstractly typed `Dict`.
+function _simplexdet(cellnodes::NTuple, nodes, simplex::NTuple{M,Int}) where {M}
+    x0 = nodes[cellnodes[simplex[1]]].x
+    return _det(ntuple(k -> nodes[cellnodes[simplex[k + 1]]].x - x0, Val(M - 1)))
+end
+_flipnodes(cellnodes::NTuple{N,Int}, flip::NTuple{N,Int}) where {N} =
+    ntuple(i -> cellnodes[flip[i]], Val(N))
+
+"""
+    reorient!(elements, nodes)
+
+Relabel in place every cell of `elements` whose Jacobian determinant is negative, and
+return `elements`.
+
+Gmsh numbers the nodes of an element following the orientation of the entity the element
+belongs to, so a surface whose normal points along `-z` yields clockwise elements while
+Ferrite requires a positive Jacobian determinant. The relabelling keeps a cell on exactly
+the same physical region, it only reverses its orientation, so the resulting grid
+describes the same mesh. Cells that are already oriented correctly are left untouched.
+
+This is applied automatically by [`togrid`](@ref); call it explicitly when assembling a
+`Ferrite.Grid` from [`tonodes`](@ref) and [`toelements`](@ref) by hand, before computing
+facet sets, since flipping a cell renumbers its local facets.
+"""
+function reorient!(elements::AbstractVector{<:Ferrite.AbstractCell}, nodes::AbstractVector{<:Node})
+    nflipped = 0
+    for (i, element) in pairs(elements)
+        simplex, flip = get(cellorientation, typeof(element)) do
+            error("cannot determine the orientation of a $(typeof(element)): unknown cell type")
+        end
+        if _simplexdet(element.nodes, nodes, simplex) < 0
+            elements[i] = typeof(element)(_flipnodes(element.nodes, flip))
+            nflipped += 1
+        end
+    end
+    @debug "reoriented $nflipped of $(length(elements)) cells"
+    return elements
+end
+
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
     dim = Int64(gmsh.model.getDimension()) # Int64 otherwise julia crashes
@@ -264,7 +356,9 @@ function togrid(; domain="")
     gmsh.model.mesh.renumberNodes()
     gmsh.model.mesh.renumberElements()
     nodes = tonodes()
-    elements, gmsh_elementidx = toelements(dim) 
+    elements, gmsh_elementidx = toelements(dim)
+    # Must happen before `tofacetsets` below, since flipping a cell renumbers its facets.
+    reorient!(elements, nodes)
     cellsets = tocellsets(dim, gmsh_elementidx)
 
     if !isempty(domain)
@@ -286,7 +380,7 @@ function togrid(; domain="")
 end
 
 export gmsh
-export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid
+export tonodes, toelements, toboundary, tofacetsets, tocellsets, togrid, reorient!
 
 @deprecate tofacesets tofacetsets
 
