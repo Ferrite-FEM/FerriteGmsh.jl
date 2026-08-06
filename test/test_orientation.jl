@@ -70,6 +70,65 @@ end
     end
 end
 
+"""
+    mirrored_single_element(gmshtype, coords)
+
+Build the single gmsh element `gmshtype` on a *mirrored* copy of `coords`. Reflecting the
+geometry while keeping gmsh's local node order makes gmsh describe a negatively oriented
+element, which is exactly what it does for a surface whose normal points the other way.
+
+Returns `(nodes, rawcell, grid)`, where `rawcell` comes straight out of `toelements` with
+no reorientation applied and `grid` is the result of the full `togrid` pipeline.
+"""
+function mirrored_single_element(gmshtype::Int, coords::Vector{NTuple{3, Float64}})
+    Gmsh.initialize()
+    return try
+        gmsh.option.setNumber("General.Terminal", 0)
+        gmsh.model.add("mirrored_element")
+        _, dim, _, numnodes, _, _ = gmsh.model.mesh.getElementProperties(gmshtype)
+        dim = Int(dim)
+        # Swap x and y; a line lives on the x axis alone and has to be flipped along it.
+        mirror(c) = dim == 1 ? (-c[1], c[2], c[3]) : (c[2], c[1], c[3])
+        gmsh.model.addDiscreteEntity(dim, 1)
+        nodetags = collect(1:numnodes)
+        gmsh.model.mesh.addNodes(dim, 1, nodetags, collect(Iterators.flatten(map(mirror, coords))))
+        gmsh.model.mesh.addElements(dim, 1, [gmshtype], [[1]], [nodetags])
+        gmsh.model.mesh.renumberNodes()
+        gmsh.model.mesh.renumberElements()
+        (tonodes(), only(first(toelements(dim))), togrid())
+    finally
+        Gmsh.finalize()
+    end
+end
+
+@testset "clockwise mesh of every cell type" begin
+    # For each supported element type, hand gmsh a negatively oriented element and check
+    # that the full `togrid` pipeline turns it into a valid Ferrite cell covering the same
+    # region. Mirroring only changes the sign of det(J), so the exact volume is unchanged.
+    for (gmshtype, (coords, exactvolume)) in sort!(collect(REFERENCE_ELEMENTS); by = first)
+        nodes, rawcell, grid = mirrored_single_element(gmshtype, coords)
+        simplex, flip = FerriteGmsh.cellorientation[typeof(rawcell)]
+
+        @testset "$(nameof(typeof(rawcell)))" begin
+            # The element really is the pathological case: untouched by `reorient!` it
+            # would hand Ferrite a negative Jacobian.
+            @test FerriteGmsh._simplexdet(rawcell.nodes, nodes, simplex) < 0
+
+            # `togrid` must have applied exactly the documented relabelling.
+            @test getncells(grid) == 1
+            cell = getcells(grid, 1)
+            @test cell isa typeof(rawcell)
+            @test cell == typeof(rawcell)(ntuple(i -> rawcell.nodes[flip[i]],
+                                                 length(rawcell.nodes)))
+
+            # ... and the result is a usable cell of the right size.
+            volume, mindetJ = cell_volume(grid)
+            @test mindetJ > 0
+            @test volume ≈ exactvolume
+        end
+    end
+end
+
 @testset "clockwise surface mesh (issue #15)" begin
     # The geometry from the issue. Its curve loop runs such that the surface normal points
     # along -z, so gmsh emits every triangle clockwise.
