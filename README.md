@@ -71,7 +71,10 @@ Grid(elements, nodes, facetsets=facetsets, cellsets=cellsets)
 
 Ferrite might have a different element node-numbering scheme if compared to Gmsh. For correct portability of a mesh from Gmsh, it is important to transform Gmsh numbering in the one that Ferrite is expecting. Having the same numbering is important because the numbering provides information about which basis function is placed at each position, as well as the orientation of the elements. 
 
-By default `FerriteGmsh` supports all Ferrite elements in which the numbering is the same to the one used in Gmsh.
+`FerriteGmsh` supports **every cell type that Ferrite defines**. Two `Dict`s in `src/FerriteGmsh.jl` describe the translation:
+
+- `gmshtoferritecell` maps the Gmsh element name (as reported by `gmsh.model.mesh.getElementProperties`) to the Ferrite cell type,
+- `gmshtoferriteperm` holds the node permutation for those element types whose numbering differs between the two codes, such that `ferrite_cell_nodes[i] == gmsh_element_nodes[perm[i]]`. Element types absent from it use the identity permutation.
 
 To check the numbering used in Ferrite, we could for example generate a grid with a single element, for a QuadraticQuadrilateral that would be:
 
@@ -102,10 +105,31 @@ FerriteViz.wireframe(grid,markersize=14,strokewidth=20,textsize = 25, nodelabels
 
 The Ferrite numbering `(1, 3, 9, 7, 2, 6, 8, 4, 5)` would have to match the numbering of Gmsh (see [gmsh docs](https://gmsh.info/doc/texinfo/gmsh.html#Node-ordering)).
 
-In the particular case of the QuadraticQuadrilateral, the numbering used in `Ferrite` and the numbering used in Gmsh matches, then as it was anticipated this type of element would be supported through the default method for [translate_elements](https://github.com/koehlerson/FerriteGmsh.jl/blob/6682d9d4d95189f4799da19690b8ff0f18a9e177/src/FerriteGmsh.jl#L17-L19).
+In the particular case of the QuadraticQuadrilateral, the numbering used in `Ferrite` and the numbering used in Gmsh matches, so this element only needs an entry in `gmshtoferritecell` and no entry in `gmshtoferriteperm`.
 
-
-If the numbering does not match like for example in the `QuadraticTetrahedron` an specific method for the function [translate_elements](https://github.com/koehlerson/FerriteGmsh.jl/blob/6682d9d4d95189f4799da19690b8ff0f18a9e177/src/FerriteGmsh.jl#L21-L36) has to be created. In this method, the correct numbering is specified.
+If the numbering does not match, like for example in the `QuadraticTetrahedron`, an entry in `gmshtoferriteperm` specifies the correct numbering. Such an entry is found by matching the Gmsh local node coordinates -- the fifth return value of `gmsh.model.mesh.getElementProperties` -- against `Ferrite.reference_coordinates(Ferrite.geometric_interpolation(cell))`, up to the affine map between the two reference domains.
 
 ### Elements supported (summary):
-With the elements supported by default and specific `translate_elements` methods (for QuadraticTetrahedron and 3D Serendipity), all the linear and quadratic elements available in `Ferrite` are already supported by `FerriteGmsh`.
+
+All 14 cell types that `Ferrite` defines are supported:
+
+| Gmsh element | Ferrite cell | reordered |
+| --- | --- | --- |
+| `Line 2` | `Line` | |
+| `Line 3` | `QuadraticLine` | |
+| `Triangle 3` | `Triangle` | |
+| `Triangle 6` | `QuadraticTriangle` | |
+| `Quadrilateral 4` | `Quadrilateral` | |
+| `Quadrilateral 8` | `SerendipityQuadraticQuadrilateral` | |
+| `Quadrilateral 9` | `QuadraticQuadrilateral` | |
+| `Tetrahedron 4` | `Tetrahedron` | |
+| `Tetrahedron 10` | `QuadraticTetrahedron` | ✓ |
+| `Hexahedron 8` | `Hexahedron` | |
+| `Hexahedron 20` | `SerendipityQuadraticHexahedron` | ✓ |
+| `Hexahedron 27` | `QuadraticHexahedron` | ✓ |
+| `Prism 6` | `Wedge` | |
+| `Pyramid 5` | `Pyramid` | ✓ |
+
+`Wedge`, `Pyramid` and `SerendipityQuadraticQuadrilateral` require Ferrite v1.
+
+Gmsh element types that are not in this table -- the higher order variants such as `Triangle 10`, `Tetrahedron 20`, `Prism 18` or `Pyramid 14` -- have no counterpart in `Ferrite`, which only provides first and second order cells. Meshes containing them raise an error naming the offending element type; re-mesh with `gmsh.model.mesh.setOrder(1)` or `setOrder(2)`.
