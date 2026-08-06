@@ -16,178 +16,109 @@ else
     const QuadraticHexahedron = Ferrite.QuadraticHexahedron
 end
 
-const gmshtoferritecell = Dict("Line 2" => Ferrite.Line,
-                              "Line 3" => Ferrite.QuadraticLine,
-                              "Triangle 3" => Ferrite.Triangle,
-                              "Triangle 6" => Ferrite.QuadraticTriangle,
-                              "Quadrilateral 4" => Ferrite.Quadrilateral,
-                              "Quadrilateral 9" => Ferrite.QuadraticQuadrilateral,
-                              "Tetrahedron 4" => Ferrite.Tetrahedron,
-                              "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
-                              "Hexahedron 8" => Ferrite.Hexahedron,
-                              "Hexahedron 20" => SerendipityQuadraticHexahedron,
-                              "Hexahedron 27"=> QuadraticHexahedron)
+"""
+    gmshtoferritecell::Dict{String,DataType}
 
-function translate_elements(original_elements)
-    return original_elements
+Map the gmsh element name -- as reported by `gmsh.model.mesh.getElementProperties` -- to
+the `Ferrite` cell type describing the same geometry. Together with
+[`gmshtoferriteperm`](@ref) this covers every cell type that `Ferrite` defines.
+"""
+const gmshtoferritecell = Dict{String,DataType}(
+    "Line 2" => Ferrite.Line,
+    "Line 3" => Ferrite.QuadraticLine,
+    "Triangle 3" => Ferrite.Triangle,
+    "Triangle 6" => Ferrite.QuadraticTriangle,
+    "Quadrilateral 4" => Ferrite.Quadrilateral,
+    "Quadrilateral 9" => Ferrite.QuadraticQuadrilateral,
+    "Tetrahedron 4" => Ferrite.Tetrahedron,
+    "Tetrahedron 10" => Ferrite.QuadraticTetrahedron,
+    "Hexahedron 8" => Ferrite.Hexahedron,
+    "Hexahedron 20" => SerendipityQuadraticHexahedron,
+    "Hexahedron 27" => QuadraticHexahedron,
+)
+
+# Cells that only exist in newer Ferrite versions: `Wedge` was added in Ferrite 0.3.14,
+# `Pyramid` and `SerendipityQuadraticQuadrilateral` in Ferrite 1.0.
+for (gmshname, ferritename) in (("Quadrilateral 8", :SerendipityQuadraticQuadrilateral),
+                                ("Prism 6", :Wedge),
+                                ("Pyramid 5", :Pyramid))
+    isdefined(Ferrite, ferritename) && (gmshtoferritecell[gmshname] = getfield(Ferrite, ferritename))
 end
 
-function translate_elements(original_elements::Vector{Ferrite.QuadraticTetrahedron})
-    ferrite_elements = Ferrite.QuadraticTetrahedron[]
-    for original_ele in original_elements
-        push!(ferrite_elements,Ferrite.QuadraticTetrahedron((original_ele.nodes[1], 
-                                                     original_ele.nodes[2], 
-                                                     original_ele.nodes[3], 
-                                                     original_ele.nodes[4],
-                                                     original_ele.nodes[5],  
-                                                     original_ele.nodes[6], 
-                                                     original_ele.nodes[7], 
-                                                     original_ele.nodes[8],
-                                                     original_ele.nodes[10],
-                                                     original_ele.nodes[9])),)
-    end
-    return ferrite_elements
+"""
+    gmshtoferriteperm::Dict{String,Tuple}
+
+Local node permutation for the gmsh element types whose node ordering differs from the
+corresponding `Ferrite` cell, such that
+
+    ferrite_cell_nodes[i] == gmsh_element_nodes[gmshtoferriteperm[name][i]]
+
+Element types absent from this `Dict` use the identity permutation.
+
+Each entry is obtained by matching the gmsh local node coordinates -- the fifth return
+value of `gmsh.model.mesh.getElementProperties` -- against
+`Ferrite.reference_coordinates(Ferrite.geometric_interpolation(cell))`, up to the affine
+map between the two reference domains. The vertices always come first in both codes, the
+permutations only reorder within the vertex/edge/face/interior blocks. See
+`test/test_cell_types.jl`, which pins every entry down by checking that a single element
+of known shape integrates to its exact volume with a positive Jacobian.
+"""
+const gmshtoferriteperm = Dict{String,Tuple}(
+    #  y
+    #  ^
+    #  |
+    #  +--- > x
+    #   \\
+    #    z
+    #
+    # Gmsh numbers the two mid-edge nodes on the edges touching the apex the other way
+    # round than Ferrite does.
+    "Tetrahedron 10" => (1, 2, 3, 4, 5, 6, 7, 8, 10, 9),
+
+    #     GMSH                  Ferrite
+    # 4----14----3          4----11----3
+    # |\         |\         |\         |\
+    # |16        | 15       |20        | 19
+    # 10 \       12 \       12 \       10 \
+    # |   8----20+---7      |   8----15+---7
+    # |   |      |   |      |   |      |   |
+    # 1---+-9----2   |      1---+-9----2   |
+    #  \ 18       \  19      \ 16       \  14
+    #  11 |        13|       17 |        18|
+    #    \|         \|         \|         \|
+    #     5----17----6          5----13----6
+    "Hexahedron 20" => (1, 2, 3, 4, 5, 6, 7, 8,
+                        9, 12, 14, 10, 17, 19, 20, 18, 11, 13, 15, 16),
+
+    # Same edge block as "Hexahedron 20"; the six face nodes 21-26 follow the face
+    # ordering of the respective code (gmsh: -z, -y, -x, +x, +y, +z;
+    # Ferrite: -z, -y, +x, +y, -x, +z), node 27 is the cell interior in both.
+    "Hexahedron 27" => (1, 2, 3, 4, 5, 6, 7, 8,
+                        9, 12, 14, 10, 17, 19, 20, 18, 11, 13, 15, 16,
+                        21, 22, 24, 25, 23, 26, 27),
+
+    # Gmsh walks the quadrilateral base counter-clockwise (1-2-3-4) while Ferrite orders
+    # it lexicographically, (0,0)-(1,0)-(0,1)-(1,1), i.e. the cycle 1-2-4-3. Node 5 is
+    # the apex in both.
+    "Pyramid 5" => (1, 2, 4, 3, 5),
+)
+
+function _tocell(elementname::String)
+    cell = get(gmshtoferritecell, elementname, nothing)
+    cell === nothing && error("""
+        unsupported gmsh element type "$elementname": Ferrite has no cell type with a \
+        matching geometry. Supported gmsh element types are \
+        $(join(sort!(collect(keys(gmshtoferritecell))), ", ")). Note that Ferrite only \
+        provides first and second order cells, so higher order gmsh elements cannot be \
+        converted -- re-mesh with `gmsh.model.mesh.setOrder(1)` or `setOrder(2)`.""")
+    return cell
 end
 
-#
-#  y
-#
-#  ^
-#  |
-#  |
-#  +--- > x
-#  \\
-#   \\
-#    \\
-#     z
-#
-#     GMSH
-# 4----14----3
-# |\         |\
-# |16        | 15
-# 10 \       12 \
-# |   8----20+---7
-# |   |      |   |
-# 1---+-9----2   |
-#  \ 18       \  19
-#  11 |        13|
-#    \|         \|
-#     5----17----6
-#
-#    Ferrite
-# 4----11----3
-# |\         |\
-# |20        | 19
-# 12 \       10 \
-# |   8----15+---7
-# |   |      |   |
-# 1---+-9----2   |
-#  \ 16       \  14
-#  17 |        18|
-#    \|         \|
-#     5----13----6
-#
-function translate_elements(original_elements::Vector{SerendipityQuadraticHexahedron})
-    ferrite_elements = SerendipityQuadraticHexahedron[]
-    for original_ele in original_elements
-        push!(ferrite_elements, SerendipityQuadraticHexahedron((
-                                             original_ele.nodes[1], 
-                                             original_ele.nodes[2], 
-                                             original_ele.nodes[3], 
-                                             original_ele.nodes[4],
-                                             original_ele.nodes[5],  
-                                             original_ele.nodes[6], 
-                                             original_ele.nodes[7], 
-                                             original_ele.nodes[8],
-                                             original_ele.nodes[9],  # edges
-                                             original_ele.nodes[12],
-                                             original_ele.nodes[14],
-                                             original_ele.nodes[10],
-                                             original_ele.nodes[17],
-                                             original_ele.nodes[19],
-                                             original_ele.nodes[20],
-                                             original_ele.nodes[18],
-                                             original_ele.nodes[11],
-                                             original_ele.nodes[13],
-                                             original_ele.nodes[15],
-                                             original_ele.nodes[16])),)
-    end
-    return ferrite_elements
+# Function barrier: `perm` comes out of an abstractly typed `Dict`, specializing here on
+# its concrete `NTuple{N,Int}` type keeps the inner loop type stable.
+function _tocells(::Type{CellType}, nodetags::Vector{Int64}, perm::NTuple{N,Int}) where {CellType,N}
+    return [CellType(ntuple(j -> nodetags[i + perm[j] - 1], Val(N))) for i in 1:N:length(nodetags)]
 end
-
-
-#  y
-#
-#  ^
-#  |
-#  |
-#  +--- > x
-#  \\
-#   \\
-#    \\
-#     z
-#
-#     GMSH
-# 4----14----3
-# |\         |\
-# |16    25  | 15
-# 10 \ 21    12 \
-# |   8----20+---7
-# |23 |  27  | 24|
-# 1---+-9----2   |
-#  \ 18    26 \  19
-#  11 |  22    13|
-#    \|         \|
-#     5----17----6
-#
-#    Ferrite
-# 4----11----3
-# |\         |\
-# |20    24  | 19
-# 12 \ 21    10 \
-# |   8----15+---7
-# |25 |  27  | 23|
-# 1---+-9----2   |
-#  \ 16     26\  14
-#  17 |  22    18|
-#    \|         \|
-#     5----13----6
-#
-function translate_elements(original_elements::Vector{QuadraticHexahedron})
-    ferrite_elements = QuadraticHexahedron[]
-    for original_ele in original_elements
-        push!(ferrite_elements,QuadraticHexahedron((
-                                             original_ele.nodes[1], 
-                                             original_ele.nodes[2], 
-                                             original_ele.nodes[3], 
-                                             original_ele.nodes[4],
-                                             original_ele.nodes[5],  
-                                             original_ele.nodes[6], 
-                                             original_ele.nodes[7], 
-                                             original_ele.nodes[8],
-                                             original_ele.nodes[9], # edge
-                                             original_ele.nodes[12],
-                                             original_ele.nodes[14],
-                                             original_ele.nodes[10],
-                                             original_ele.nodes[17],
-                                             original_ele.nodes[19],
-                                             original_ele.nodes[20],
-                                             original_ele.nodes[18],
-                                             original_ele.nodes[11],
-                                             original_ele.nodes[13],
-                                             original_ele.nodes[15],
-                                             original_ele.nodes[16],
-                                             original_ele.nodes[21], # face
-                                             original_ele.nodes[22],
-                                             original_ele.nodes[24],
-                                             original_ele.nodes[25],
-                                             original_ele.nodes[23],
-                                             original_ele.nodes[26],
-                                             original_ele.nodes[27],
-                                             )),)
-    end
-    return ferrite_elements
-end 
 
 function tonodes()
     nodeid, nodes = gmsh.model.mesh.getNodes()
@@ -203,17 +134,17 @@ function toelements(dim::Int)
     nodetags_all = convert(Vector{Vector{Int64}}, nodetags)
     if length(elementtypes) == 1
         elementname, _, _, _, _, _ = gmsh.model.mesh.getElementProperties(elementtypes[1])
-        elements = gmshtoferritecell[elementname][]
+        elements = _tocell(elementname)[]
     else
         elements = Ferrite.AbstractCell[]
     end
 
     for (eletypeidx,eletype) in enumerate(elementtypes)
         nodetags = nodetags_all[eletypeidx]
-        elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(eletype) 
-        ferritecell = gmshtoferritecell[elementname]
-        elements_gmsh = [ferritecell(Tuple(nodetags[i:i + (numnodes - 1)])) for i in 1:numnodes:length(nodetags)]
-        elements_batch = translate_elements(elements_gmsh)
+        elementname, dim, order, numnodes, localnodecoord, numprimarynodes = gmsh.model.mesh.getElementProperties(eletype)
+        ferritecell = _tocell(elementname)
+        perm = get(() -> ntuple(identity, numnodes), gmshtoferriteperm, elementname)
+        elements_batch = _tocells(ferritecell, nodetags, perm)
         append!(elements,elements_batch)
     end
 
@@ -230,9 +161,14 @@ function toboundary(dim::Int)
         boundaryconnectivity = Tuple[]
         for entity in boundaryentities
             boundarytypes, boundarytags, boundarynodetags = gmsh.model.mesh.getElements(dim, entity)
-            _, _, _, numnodes, _, _ = gmsh.model.mesh.getElementProperties(boundarytypes[1]) 
-            boundarynodetags = convert(Vector{Vector{Int64}}, boundarynodetags)[1]
-            append!(boundaryconnectivity, [Tuple(boundarynodetags[i:i + (numnodes - 1)]) for i in 1:numnodes:length(boundarynodetags)])
+            boundarynodetags_all = convert(Vector{Vector{Int64}}, boundarynodetags)
+            # A single entity can hold more than one element type, e.g. the surface of a
+            # hybrid mesh carries both triangles and quadrilaterals, so collect them all.
+            for (typeidx, boundarytype) in enumerate(boundarytypes)
+                _, _, _, numnodes, _, _ = gmsh.model.mesh.getElementProperties(boundarytype)
+                tags = boundarynodetags_all[typeidx]
+                append!(boundaryconnectivity, [Tuple(tags[i:i + (numnodes - 1)]) for i in 1:numnodes:length(tags)])
+            end
         end
         boundarydict[name] = boundaryconnectivity
     end 
