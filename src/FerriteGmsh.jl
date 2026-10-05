@@ -38,9 +38,12 @@ const gmshtoferritecell = Dict{String,DataType}(
 )
 
 # Cells that only exist in newer Ferrite versions: `Wedge` was added in Ferrite 0.3.14,
-# `Pyramid` and `SerendipityQuadraticQuadrilateral` in Ferrite 1.0.
+# `Pyramid` and `SerendipityQuadraticQuadrilateral` in Ferrite 1.0, and `QuadraticWedge`
+# after Ferrite 1.x. The node ordering of "Prism 18" matches `Lagrange{RefPrism, 2}`, so it
+# needs no entry in `gmshtoferriteperm`.
 for (gmshname, ferritename) in (("Quadrilateral 8", :SerendipityQuadraticQuadrilateral),
                                 ("Prism 6", :Wedge),
+                                ("Prism 18", :QuadraticWedge),
                                 ("Pyramid 5", :Pyramid))
     isdefined(Ferrite, ferritename) && (gmshtoferritecell[gmshname] = getfield(Ferrite, ferritename))
 end
@@ -158,6 +161,8 @@ for (gmshname, simplex, flip) in (
             (1, 4, 3, 2, 5, 8, 7, 6, 12, 11, 10, 9, 16, 15, 14, 13, 17, 20, 19, 18,
              21, 25, 24, 23, 22, 26, 27)),
         ("Prism 6", (1, 2, 3, 4), (1, 3, 2, 4, 6, 5)),
+        ("Prism 18", (1, 2, 3, 4),
+            (1, 3, 2, 4, 6, 5, 8, 7, 9, 10, 12, 11, 14, 13, 15, 17, 16, 18)),
         ("Pyramid 5", (1, 2, 3, 5), (1, 3, 2, 4, 5)),
     )
     haskey(gmshtoferritecell, gmshname) &&
