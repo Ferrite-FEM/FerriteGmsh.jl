@@ -21,7 +21,11 @@ function grid_volume(grid)
     return volume, mindetJ
 end
 
-@testset "wedge mesh" begin
+# Second order wedges ("Prism 18") need a Ferrite version that defines `QuadraticWedge`.
+const WEDGE_ORDERS = isdefined(Ferrite, :QuadraticWedge) ?
+    ((1, Ferrite.Wedge), (2, Ferrite.QuadraticWedge)) : ((1, Ferrite.Wedge),)
+
+@testset "wedge mesh (order $order)" for (order, WedgeType) in WEDGE_ORDERS
     Gmsh.initialize()
     grid = try
         gmsh.option.setNumber("General.Terminal", 0)
@@ -46,13 +50,14 @@ end
         gmsh.model.addPhysicalGroup(2, [topsurface], 2)
         gmsh.model.setPhysicalName(2, 2, "top")
         gmsh.model.mesh.generate(3)
+        gmsh.model.mesh.setOrder(order)
         togrid()
     finally
         Gmsh.finalize()
     end
 
     @test getncells(grid) > 0
-    @test all(c -> c isa Ferrite.Wedge, grid.cells)
+    @test all(c -> c isa WedgeType, grid.cells)
     volume, mindetJ = grid_volume(grid)
     @test mindetJ > 0
     @test volume ≈ 2.0                              # 1 x 1 base extruded by 2

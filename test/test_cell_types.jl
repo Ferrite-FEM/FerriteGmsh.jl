@@ -89,6 +89,17 @@ let
     # Prism 6
     REFERENCE_ELEMENTS[6] = ([prism(0, 0, -1), prism(1, 0, -1), prism(0, 1, -1),
                               prism(0, 0, 1), prism(1, 0, 1), prism(0, 1, 1)], 12.0)
+    # Prism 18, in gmsh's local node order: vertices, the nine mid-edge nodes and the
+    # centres of the three quadrilateral faces. Only for Ferrite versions defining
+    # `QuadraticWedge`.
+    if isdefined(Ferrite, :QuadraticWedge)
+        REFERENCE_ELEMENTS[13] = ([prism(0, 0, -1), prism(1, 0, -1), prism(0, 1, -1),
+                                   prism(0, 0, 1), prism(1, 0, 1), prism(0, 1, 1),
+                                   prism(0.5, 0, -1), prism(0, 0.5, -1), prism(0, 0, 0),
+                                   prism(0.5, 0.5, -1), prism(1, 0, 0), prism(0, 1, 0),
+                                   prism(0.5, 0, 1), prism(0, 0.5, 1), prism(0.5, 0.5, 1),
+                                   prism(0.5, 0, 0), prism(0, 0.5, 0), prism(0.5, 0.5, 0)], 12.0)
+    end
     # Pyramid 5: 2x2 base in the z=0 plane (gmsh walks it counter-clockwise), apex sheared
     # off-centre so that a base rotation cannot pass by symmetry. V = 1/3 * 4 * 3 = 4.
     REFERENCE_ELEMENTS[7] = ([(-1.0, -1.0, 0.0), (1.0, -1.0, 0.0),
