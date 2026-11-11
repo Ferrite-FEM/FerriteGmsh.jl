@@ -100,6 +100,15 @@ let
                                    prism(0.5, 0, 1), prism(0, 0.5, 1), prism(0.5, 0.5, 1),
                                    prism(0.5, 0, 0), prism(0, 0.5, 0), prism(0.5, 0.5, 0)], 12.0)
     end
+    # Prism 15 (gmsh type 18), in gmsh's order from its node-ordering diagram:
+    # bottom edges, vertical edges, then top edges. This matches Ferrite's local order.
+    if isdefined(Ferrite, :SerendipityQuadraticWedge)
+        REFERENCE_ELEMENTS[18] = ([prism(0, 0, -1), prism(1, 0, -1), prism(0, 1, -1),
+                                   prism(0, 0, 1), prism(1, 0, 1), prism(0, 1, 1),
+                                   prism(0.5, 0, -1), prism(0, 0.5, -1), prism(0, 0, 0),
+                                   prism(0.5, 0.5, -1), prism(1, 0, 0), prism(0, 1, 0),
+                                   prism(0.5, 0, 1), prism(0, 0.5, 1), prism(0.5, 0.5, 1)], 12.0)
+    end
     # Pyramid 5: 2x2 base in the z=0 plane (gmsh walks it counter-clockwise), apex sheared
     # off-centre so that a base rotation cannot pass by symmetry. V = 1/3 * 4 * 3 = 4.
     REFERENCE_ELEMENTS[7] = ([(-1.0, -1.0, 0.0), (1.0, -1.0, 0.0),

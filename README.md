@@ -131,12 +131,13 @@ All cell types that `Ferrite` defines are supported:
 | `Hexahedron 20` | `SerendipityQuadraticHexahedron` | ✓ |
 | `Hexahedron 27` | `QuadraticHexahedron` | ✓ |
 | `Prism 6` | `Wedge` | |
+| `Prism 15` | `SerendipityQuadraticWedge` | ✓ |
 | `Prism 18` | `QuadraticWedge` | |
 | `Pyramid 5` | `Pyramid` | ✓ |
 
-`Wedge`, `Pyramid` and `SerendipityQuadraticQuadrilateral` require Ferrite v1, `QuadraticWedge` requires a Ferrite version that defines it.
+`Wedge`, `Pyramid` and `SerendipityQuadraticQuadrilateral` require Ferrite v1. `SerendipityQuadraticWedge` requires a Ferrite version that defines it, as does `QuadraticWedge`.
 
-Gmsh element types that are not in this table -- such as the higher order variants `Triangle 10` or `Tetrahedron 20`, or the second order `Prism 15` and `Pyramid 14` -- have no counterpart in `Ferrite`. Meshes containing them raise an error naming the offending element type; re-mesh with `gmsh.model.mesh.setOrder(1)` or `setOrder(2)`.
+Gmsh element types that are not in this table -- such as the higher order variants `Triangle 10` or `Tetrahedron 20`, or the second order `Pyramid 14` -- have no counterpart in `Ferrite`. Meshes containing them raise an error naming the offending element type; re-mesh with `gmsh.model.mesh.setOrder(1)` or `setOrder(2)`.
 
 ### Element orientation
 
