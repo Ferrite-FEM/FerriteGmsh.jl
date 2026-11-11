@@ -15,6 +15,8 @@ else
     const SerendipityQuadraticHexahedron = Ferrite.SerendipityQuadraticHexahedron
     const QuadraticHexahedron = Ferrite.QuadraticHexahedron
 end
+const SerendipityQuadraticWedge = isdefined(Ferrite, :SerendipityQuadraticWedge) ?
+    Ferrite.SerendipityQuadraticWedge : Ferrite.Cell{3,15,5}
 
 """
     gmshtoferritecell::Dict{String,DataType}
@@ -43,6 +45,7 @@ const gmshtoferritecell = Dict{String,DataType}(
 # needs no entry in `gmshtoferriteperm`.
 for (gmshname, ferritename) in (("Quadrilateral 8", :SerendipityQuadraticQuadrilateral),
                                 ("Prism 6", :Wedge),
+                                ("Prism 15", :SerendipityQuadraticWedge),
                                 ("Prism 18", :QuadraticWedge),
                                 ("Pyramid 5", :Pyramid))
     isdefined(Ferrite, ferritename) && (gmshtoferritecell[gmshname] = getfield(Ferrite, ferritename))
@@ -104,6 +107,7 @@ const gmshtoferriteperm = Dict{String,Tuple}(
     # it lexicographically, (0,0)-(1,0)-(0,1)-(1,1), i.e. the cycle 1-2-4-3. Node 5 is
     # the apex in both.
     "Pyramid 5" => (1, 2, 4, 3, 5),
+
 )
 
 function _tocell(elementname::String)
@@ -163,6 +167,8 @@ for (gmshname, simplex, flip) in (
         ("Prism 6", (1, 2, 3, 4), (1, 3, 2, 4, 6, 5)),
         ("Prism 18", (1, 2, 3, 4),
             (1, 3, 2, 4, 6, 5, 8, 7, 9, 10, 12, 11, 14, 13, 15, 17, 16, 18)),
+        ("Prism 15", (1, 2, 3, 4),
+            (1, 3, 2, 4, 6, 5, 8, 7, 9, 10, 12, 11, 14, 13, 15)),
         ("Pyramid 5", (1, 2, 3, 5), (1, 3, 2, 4, 5)),
     )
     haskey(gmshtoferritecell, gmshname) &&
