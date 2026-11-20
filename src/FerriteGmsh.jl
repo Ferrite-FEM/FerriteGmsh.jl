@@ -272,23 +272,26 @@ function toboundary(dim::Int)
     return boundarydict
 end
 
-function _add_to_facetsettuple!(facetsettuple::Set{FacetIndex}, boundaryfacet::Tuple, element_facets)
-    for (eleidx, elefacets) in enumerate(element_facets)
-        if any(issubset.(elefacets, (boundaryfacet,)))
-            localfacet = findfirst(x -> issubset(x,boundaryfacet), elefacets) 
-            push!(facetsettuple, FacetIndex(eleidx, localfacet))
-        end
+function _add_to_facetsettuple!(facetsettuple::Set{FacetIndex}, boundaryfacet::Tuple, element_facets, vertex_elements)
+    for node in boundaryfacet, eleidx in get(vertex_elements, node, ())
+        localfacet = findfirst(x -> issubset(x, boundaryfacet), element_facets[eleidx])
+        localfacet === nothing || push!(facetsettuple, FacetIndex(eleidx, localfacet))
     end
     return facetsettuple
 end
 
 function tofacetsets(boundarydict::Dict{String,Vector}, elements::Vector{<:Ferrite.AbstractCell})
     element_facets = facets.(elements)
+    # the elements that have each node as a vertex
+    vertex_elements = Dict{Int,Vector{Int}}()
+    for (eleidx, element) in enumerate(elements), node in Ferrite.vertices(element)
+        push!(get!(Vector{Int}, vertex_elements, node), eleidx)
+    end
     facetsets = Dict{String,Set{FacetIndex}}()
     for (boundaryname, boundaryfacets) in boundarydict
         facetsettuple = Set{FacetIndex}()
         for boundaryfacet in boundaryfacets
-            _add_to_facetsettuple!(facetsettuple, boundaryfacet, element_facets)
+            _add_to_facetsettuple!(facetsettuple, boundaryfacet, element_facets, vertex_elements)
         end
         facetsets[boundaryname] = facetsettuple
     end
